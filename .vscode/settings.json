@@ -1,0 +1,47 @@
+{
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "cSpell.words": [
+        "CHPD",
+        "Erriez",
+        "manu",
+        "togther",
+        "unsoliciated",
+        "VINDRIKTNING",
+        "Wemos",
+        "WROOM"
+    ],
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": "active",
+    "editor.matchBrackets": "near",
+    "C_Cpp.enhancedColorization": "Enabled",
+    "arduino.additionalUrls": [
+        "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+    ],
+    "arduino.commandPath": "Contents/MacOS/Arduino",
+    "arduino.path": "/Applications/Arduino.app",
+    "editor.fontFamily": "Fira Code",
+    "editor.fontLigatures": true,
+    "files.associations": {
+        "array": "cpp",
+        "associative_base": "cpp",
+        "deque": "cpp",
+        "initializer_list": "cpp",
+        "iterator": "cpp",
+        "list": "cpp",
+        "serstream": "cpp",
+        "vector": "cpp",
+        "*.ipp": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "string_view": "cpp",
+        "regex": "cpp",
+        "valarray": "cpp"
+    },
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "Erase Flash",
+            "task": "Erase Flash",
+        }
+    ]
+}

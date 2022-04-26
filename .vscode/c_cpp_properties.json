@@ -1,0 +1,32 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "~/Documents/Arduino/libraries/**",
+                "~/Documents/Arduino/libraries/EspSoftwareSerial/**",
+                "~/Documents/Arduino/libraries/AsyncTCP/**",
+                "~/Documents/Arduino/libraries/ESPAsyncWebServer/**",
+                "~/Documents/Arduino/libraries/AsyncElegantOTA/**"
+            ],
+            "defines": [],
+            "macFrameworkPath": [],
+            "compilerPath": "/Users/user/Library/Arduino15/packages/esp32/tools/xtensa-esp32-elf-gcc/gcc8_4_0-esp-2021r2/bin/xtensa-esp32-elf-size",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "macos-gcc-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**",
+                    "~/Documents/Arduino/libraries/**",
+                    "~/Documents/Arduino/libraries/EspSoftwareSerial/**",
+                    "~/Documents/Arduino/libraries/AsyncTCP/**",
+                    "~/Documents/Arduino/libraries/ESPAsyncWebServer/**",
+                    "~/Documents/Arduino/libraries/AsyncElegantOTA/**"
+                ]
+            }
+        }
+    ],
+    "version": 4
+}

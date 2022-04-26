@@ -1,0 +1,8 @@
+{
+    "configuration": "FlashFreq=80,PartitionScheme=default,CPUFreq=240,UploadSpeed=115200",
+    "board": "esp32:esp32:lolin32",
+    "port": "/dev/tty.usbserial-1410",
+    "sketch": "led_strip/led_strip.ino",
+    "output": "build",
+    "postbuild": "cp ./build/led_strip.ino.bin ./firmware.bin"
+}
