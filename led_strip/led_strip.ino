@@ -57,6 +57,10 @@
 
 #include "HomeSpan.h"
 #include "extras/Pixel.h" // include the HomeSpan Pixel class
+#include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
+
+AsyncWebServer server(80);
 
 ///////////////////////////////
 
@@ -99,8 +103,10 @@ void setup() {
 	homeSpan.setLogLevel(0);
 	homeSpan.setStatusPin(32);
 	homeSpan.setStatusAutoOff(10);
+	homeSpan.setWifiCallback(setupWeb);
 	homeSpan.setControlPin(0);
 	homeSpan.setPortNum(81);
+	homeSpan.enableAutoStartAP();
 	homeSpan.begin(Category::Lighting, "Pixel LEDS" DEVICE_SUFFIX);
 
 	SPAN_ACCESSORY(); // create Bridge (note this sketch uses the SPAN_ACCESSORY() macro, introduced in v1.5.1 --- see the HomeSpan API Reference for details on this convenience macro)
@@ -116,3 +122,17 @@ void loop() {
 }
 
 ///////////////////////////////
+
+void setupWeb() {
+	server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request) {
+		String content = "<html><body>Rebooting!  Will return to configuration page in 10 seconds.<br><br>";
+		content += "<meta http-equiv = \"refresh\" content = \"10; url = /\" />";
+		request->send(200, "text/html", content);
+
+		ESP.restart();
+	});
+
+	AsyncElegantOTA.begin(&server); // Start AsyncElegantOTA
+	server.begin();
+	LOG1("HTTP server started");
+} // setupWeb
