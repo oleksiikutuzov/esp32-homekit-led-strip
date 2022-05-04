@@ -25,81 +25,278 @@
  *
  ********************************************************************************/
 
-// HomeSpan Addressable RGB LED Examples.  Demonstrates use of:
-//
-//  * HomeSpan Pixel Class that provides for control of single-wire addressable RGB and RGBW LEDs, such as the WS2812 and SK6812
-//  * HomeSpan Dot Class that provides for control of two-wire addressable RGB LEDs, such as the APA102 and SK9822
-//
-// IMPORTANT:  YOU LIKELY WILL NEED TO CHANGE THE PIN NUMBERS BELOW TO MATCH YOUR SPECIFIC ESP32/S2/C3 BOARD
-//
+// HomeSpan Addressable RGB LED Example
+
+// Demonstrates use of HomeSpan Pixel Class that provides for control of single-wire
+// addressable RGB LEDs, such as the SK68xx or WS28xx models found in many devices,
+// including the Espressif ESP32, ESP32-S2, and ESP32-C3 development boards.
+
+// Also demonstrates how to take advantage of the Eve HomeKit App's ability to render
+// a generic custom Characteristic.  The sketch uses a custom Characterstic to create
+// a "selector" button that enables to the user to select which special effect to run
 
 // Onboard led pin = 32
 // NEOPIXEL pin = 17
 // Mosfet pin = 18
 // Button pin = 0
+int angle	= 0;
+int counter = 0;
 
-#if defined(CONFIG_IDF_TARGET_ESP32)
-
-#define NEOPIXEL_RGB_PIN 17
-#define DEVICE_SUFFIX	 ""
-
-#elif defined(CONFIG_IDF_TARGET_ESP32S2)
-
-#define NEOPIXEL_RGB_PIN 17
-#define DEVICE_SUFFIX	 "-S2"
-
-#elif defined(CONFIG_IDF_TARGET_ESP32C3)
-
-#define NEOPIXEL_RGB_PIN 0
-#define DEVICE_SUFFIX	 "-C3"
-
-#endif
+#define REQUIRED VERSION(1, 5, 0)
 
 #include "HomeSpan.h"
 #include "extras/Pixel.h" // include the HomeSpan Pixel class
 #include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
 
-AsyncWebServer server(80);
+#if defined(CONFIG_IDF_TARGET_ESP32)
 
+#define NEOPIXEL_RGBW_PIN 17
+
+#elif defined(CONFIG_IDF_TARGET_ESP32S2)
+
+#define NEOPIXEL_RGBW_PIN 38
+
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+
+#define NEOPIXEL_RGBW_PIN 2
+
+#endif
+
+// clang-format off
+CUSTOM_CHAR(Selector, 00000001-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 3, false); // create Custom Characteristic to "select" special effects via Eve App
+// clang-format on
+
+// declare function
+int *Wheel(byte WheelPos);
 ///////////////////////////////
+AsyncWebServer server(80);
+struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of nPixel Pixels
 
-struct NeoPixel_RGB : Service::LightBulb { // Addressable single-wire RGB LED Strand (e.g. NeoPixel)
+	struct SpecialEffect {
+		Pixel_Strand *px;
+		const char   *name;
+
+		SpecialEffect(Pixel_Strand *px, const char *name) {
+			this->px   = px;
+			this->name = name;
+			Serial.printf("Adding Effect %d: %s\n", px->Effects.size() + 1, name);
+		}
+
+		virtual void	 init() {}
+		virtual uint32_t update() { return (60000); }
+		virtual int		 requiredBuffer() { return (0); }
+	};
 
 	Characteristic::On		   power{0, true};
 	Characteristic::Hue		   H{0, true};
-	Characteristic::Saturation S{0, true};
+	Characteristic::Saturation S{100, true};
 	Characteristic::Brightness V{100, true};
-	Pixel					  *pixel;
-	uint8_t					   nPixels;
+	Characteristic::Selector   effect{1, true};
 
-	NeoPixel_RGB(uint8_t pin, uint8_t nPixels) : Service::LightBulb() {
+	vector<SpecialEffect *> Effects;
 
-		V.setRange(5, 100, 1);			// sets the range of the Brightness to be from a min of 5%, to a max of 100%, in steps of 1%
-		pixel		  = new Pixel(pin); // creates Pixel LED on specified pin
-		this->nPixels = nPixels;		// save number of Pixels in this LED Strand
-		update();						// manually call update() to set pixel with restored initial values
+	Pixel		  *pixel;
+	int			  nPixels;
+	Pixel::Color *colors;
+	uint32_t	  alarmTime;
+
+	Pixel_Strand(int pin, int nPixels) : Service::LightBulb() {
+
+		pixel		  = new Pixel(pin, false); // creates RGBW pixel LED on specified pin using default timing parameters suitable for most SK68xx LEDs
+		this->nPixels = nPixels;			   // store number of Pixels in Strand
+
+		Effects.push_back(new ManualControl(this));
+		// Effects.push_back(new KnightRider(this));
+		// Effects.push_back(new Random(this));
+		Effects.push_back(new RainbowSolid(this));
+		Effects.push_back(new Rainbow(this));
+
+		effect.setUnit(""); // configures custom "Selector" characteristic for use with Eve HomeKit
+		effect.setDescription("Color Effect");
+		effect.setRange(1, Effects.size(), 1);
+
+		V.setRange(5, 100, 1); // sets the range of the Brightness to be from a min of 5%, to a max of 100%, in steps of 1%
+
+		int bufSize = 0;
+
+		for (int i = 0; i < Effects.size(); i++)
+			bufSize = Effects[i]->requiredBuffer() > bufSize ? Effects[i]->requiredBuffer() : bufSize;
+
+		colors = (Pixel::Color *)calloc(bufSize, sizeof(Pixel::Color)); // storage for dynamic pixel pattern
+
+		Serial.printf("\nConfigured Pixel_Strand on pin %d with %d pixels and %d effects.  Color buffer = %d pixels\n\n", pin, nPixels, Effects.size(), bufSize);
+
+		update();
 	}
 
 	boolean update() override {
 
-		int p = power.getNewVal();
-
-		float h = H.getNewVal<float>(); // range = [0,360]
-		float s = S.getNewVal<float>(); // range = [0,100]
-		float v = V.getNewVal<float>(); // range = [0,100]
-
-		Pixel::Color color;
-
-		pixel->set(color.HSV(h * p, s * p, v * p), nPixels); // sets all nPixels to the same HSV color
+		if (!power.getNewVal()) {
+			pixel->set(Pixel::Color().RGB(0, 0, 0, 0), nPixels);
+		} else {
+			Effects[effect.getNewVal() - 1]->init();
+			alarmTime = millis() + Effects[effect.getNewVal() - 1]->update();
+			if (effect.updated())
+				Serial.printf("Effect changed to: %s\n", Effects[effect.getNewVal() - 1]->name);
+		}
 
 		return (true);
 	}
+
+	void loop() override {
+
+		if (millis() > alarmTime && power.getVal())
+			alarmTime = millis() + Effects[effect.getNewVal() - 1]->update();
+	}
+
+	//////////////
+
+	struct KnightRider : SpecialEffect {
+
+		int phase = 0;
+		int dir	  = 1;
+
+		KnightRider(Pixel_Strand *px) : SpecialEffect{px, "KnightRider"} {}
+
+		void init() override {
+			float level = px->V.getNewVal<float>();
+			for (int i = 0; i < px->nPixels; i++, level *= 0.8) {
+				px->colors[px->nPixels + i - 1].HSV(px->H.getNewVal<float>(), px->S.getNewVal<float>(), level);
+				px->colors[px->nPixels - i - 1] = px->colors[px->nPixels + i - 1];
+			}
+		}
+
+		uint32_t update() override {
+			px->pixel->set(px->colors + phase, px->nPixels);
+			if (phase == px->nPixels - 1)
+				dir = -1;
+			else if (phase == 0)
+				dir = 1;
+			phase += dir;
+			return (20);
+		}
+
+		int requiredBuffer() override { return (px->nPixels * 2 - 1); }
+	};
+
+	//////////////
+
+	struct ManualControl : SpecialEffect {
+
+		ManualControl(Pixel_Strand *px) : SpecialEffect{px, "Manual Control"} {}
+
+		void init() override { px->pixel->set(Pixel::Color().HSV(px->H.getNewVal<float>(), px->S.getNewVal<float>(), px->V.getNewVal<float>()), px->nPixels); }
+	};
+
+	//////////////
+
+	struct Random : SpecialEffect {
+
+		Random(Pixel_Strand *px) : SpecialEffect{px, "Random"} {}
+
+		uint32_t update() override {
+			for (int i = 0; i < px->nPixels; i++)
+				px->colors[i].HSV((esp_random() % 6) * 60, 100, px->V.getNewVal<float>());
+			px->pixel->set(px->colors, px->nPixels);
+			return (1000);
+		}
+
+		int requiredBuffer() override { return (px->nPixels); }
+	};
+
+	///////////////////////////////
+
+	struct RainbowSolid : SpecialEffect {
+
+		int8_t *dir;
+
+		RainbowSolid(Pixel_Strand *px) : SpecialEffect{px, "Rainbow Solid"} {
+			dir = (int8_t *)calloc(px->nPixels, sizeof(int8_t));
+		}
+
+		void init() override {
+			for (int i = 0; i < px->nPixels; i++) {
+				px->colors[i].RGB(0, 0, 0, 0);
+				dir[i] = 0;
+			}
+		}
+
+		uint32_t update() override {
+			for (int i = 0; i < px->nPixels; i++) {
+				int red, green, blue;
+
+				if (angle < 60) {
+					red	  = 255;
+					green = round(angle * 4.25 - 0.01);
+					blue  = 0;
+				} else if (angle < 120) {
+					red	  = round((120 - angle) * 4.25 - 0.01);
+					green = 255;
+					blue  = 0;
+				} else if (angle < 180) {
+					red = 0, green = 255;
+					blue = round((angle - 120) * 4.25 - 0.01);
+				} else if (angle < 240) {
+					red = 0, green = round((240 - angle) * 4.25 - 0.01);
+					blue = 255;
+				} else if (angle < 300) {
+					red = round((angle - 240) * 4.25 - 0.01), green = 0;
+					blue = 255;
+				} else {
+					red = 255, green = 0;
+					blue = round((360 - angle) * 4.25 - 0.01);
+				}
+				px->colors[i] = Pixel::Color().RGB(red, green, blue, 0);
+			}
+			px->pixel->set(px->colors, px->nPixels);
+			angle++;
+			if (angle == 360) angle = 0;
+			return (100);
+		}
+
+		int requiredBuffer() override { return (px->nPixels); }
+	};
+
+	///////////////////////////////
+
+	struct Rainbow : SpecialEffect {
+
+		int8_t *dir;
+
+		Rainbow(Pixel_Strand *px) : SpecialEffect{px, "Rainbow"} {
+			dir = (int8_t *)calloc(px->nPixels, sizeof(int8_t));
+		}
+
+		void init() override {
+			for (int i = 0; i < px->nPixels; i++) {
+				px->colors[i].RGB(0, 0, 0, 0);
+				dir[i] = 0;
+			}
+		}
+
+		uint32_t update() override {
+			for (int i = 0; i < px->nPixels; i++) {
+				int *rgb;
+				rgb			  = Wheel(((i * 256 / px->nPixels) + counter) & 255);
+				px->colors[i] = Pixel::Color().RGB(*rgb, *(rgb + 1), *(rgb + 2), 0);
+			}
+			px->pixel->set(px->colors, px->nPixels);
+			counter++;
+			return (100);
+		}
+
+		int requiredBuffer() override { return (px->nPixels); }
+	};
+	///////////////////////////////
 };
+
+///////////////////////////////
 
 void setup() {
 
 	Serial.begin(115200);
+
 	homeSpan.setLogLevel(0);
 	homeSpan.setStatusPin(32);
 	homeSpan.setStatusAutoOff(10);
@@ -107,12 +304,22 @@ void setup() {
 	homeSpan.setControlPin(0);
 	homeSpan.setPortNum(81);
 	homeSpan.enableAutoStartAP();
-	homeSpan.begin(Category::Lighting, "Pixel LEDS" DEVICE_SUFFIX);
 
-	SPAN_ACCESSORY(); // create Bridge (note this sketch uses the SPAN_ACCESSORY() macro, introduced in v1.5.1 --- see the HomeSpan API Reference for details on this convenience macro)
+	homeSpan.begin(Category::Lighting, "Holiday Lights");
 
-	SPAN_ACCESSORY("Neo RGB");
-	new NeoPixel_RGB(NEOPIXEL_RGB_PIN, 60); // create 8-LED NeoPixel RGB Strand with full color control
+	new SpanAccessory();
+	new Service::AccessoryInformation();
+	new Characteristic::Name("Holiday Lights");
+	new Characteristic::Manufacturer("HomeSpan");
+	new Characteristic::SerialNumber("123-ABC");
+	new Characteristic::Model("NeoPixel 60 RGBW LEDs");
+	new Characteristic::FirmwareRevision("1.0");
+	new Characteristic::Identify();
+
+	new Service::HAPProtocolInformation();
+	new Characteristic::Version("1.1.0");
+
+	new Pixel_Strand(NEOPIXEL_RGBW_PIN, 90);
 }
 
 ///////////////////////////////
@@ -122,6 +329,29 @@ void loop() {
 }
 
 ///////////////////////////////
+
+int *Wheel(byte WheelPos) {
+	static int rgb[3];
+	WheelPos = 255 - WheelPos;
+	if (WheelPos < 85) {
+		rgb[0] = 255 - WheelPos * 3;
+		rgb[1] = 0;
+		rgb[2] = WheelPos * 3;
+		return rgb;
+	}
+	if (WheelPos < 170) {
+		WheelPos -= 85;
+		rgb[0] = 0;
+		rgb[1] = WheelPos * 3;
+		rgb[2] = 255 - WheelPos * 3;
+		return rgb;
+	}
+	WheelPos -= 170;
+	rgb[0] = WheelPos * 3;
+	rgb[1] = 255 - WheelPos * 3;
+	rgb[2] = 0;
+	return rgb;
+}
 
 void setupWeb() {
 	server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request) {
