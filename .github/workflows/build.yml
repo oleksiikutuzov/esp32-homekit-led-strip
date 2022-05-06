@@ -9,19 +9,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Checkout custom library
+      - name: Checkout ESPAsyncWebServer library
         uses: actions/checkout@v2
         with:
           repository: me-no-dev/ESPAsyncWebServer
           ref: master
           path: CustomESPAsyncWebServer # must contain string "Custom"
 
-      - name: Checkout custom library
+      - name: Checkout AsyncElegantOTA library
         uses: actions/checkout@v2
         with:
           repository: ayushsharma82/AsyncElegantOTA
           ref: master
-          path: CustomAsyncElegantOTA # must contain string "Custom"
+          path: CustomAsyncElegantOTA
+
+      - name: Checkout AsyncTCP library
+        uses: actions/checkout@v2
+        with:
+          repository: me-no-dev/AsyncTCP
+          ref: master
+          path: CustomAsyncTCP
 
       - name: "Compile sketch"
         uses: ArminJo/arduino-test-compile@v3
