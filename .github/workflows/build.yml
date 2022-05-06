@@ -9,11 +9,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Checkout custom library
+        uses: actions/checkout@v2
+        with:
+          repository: me-no-dev/ESPAsyncWebServer
+          ref: master
+          path: CustomESPAsyncWebServer # must contain string "Custom"
+
+      - name: Checkout custom library
+        uses: actions/checkout@v2
+        with:
+          repository: ayushsharma82/AsyncElegantOTA
+          ref: master
+          path: CustomAsyncElegantOTA # must contain string "Custom"
+
       - name: "Compile sketch"
         uses: ArminJo/arduino-test-compile@v3
         with:
           arduino-board-fqbn: "esp32:esp32:esp32:PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,DebugLevel=none"
           platform-url: https://dl.espressif.com/dl/package_esp32_index.json
-          required-libraries: HomeSpan,ESPAsyncWebServer,AsyncElegantOTA
+          required-libraries: HomeSpan
           # sketches-exclude: WhistleSwitch 50Hz
           # build-properties: '{ "air_quality": "-DDEBUG -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }'
