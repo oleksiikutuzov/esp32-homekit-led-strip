@@ -26,6 +26,7 @@ jobs:
       - name: "Compile sketch"
         uses: ArminJo/arduino-test-compile@v3
         with:
+          sketch-names: led_strip/led_strip.ino
           arduino-board-fqbn: "esp32:esp32:esp32:PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,DebugLevel=none"
           platform-url: https://dl.espressif.com/dl/package_esp32_index.json
           required-libraries: HomeSpan
