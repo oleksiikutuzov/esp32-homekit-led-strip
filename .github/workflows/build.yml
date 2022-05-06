@@ -14,6 +14,6 @@ jobs:
         with:
           arduino-board-fqbn: "esp32:esp32:esp32:PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,DebugLevel=none"
           platform-url: https://dl.espressif.com/dl/package_esp32_index.json
-          required-libraries: HomeSpan
+          required-libraries: HomeSpan,ESPAsyncWebServer,AsyncElegantOTA
           # sketches-exclude: WhistleSwitch 50Hz
           # build-properties: '{ "air_quality": "-DDEBUG -DFREQUENCY_RANGE_LOW", "SimpleFrequencyDetector": "-DINFO" }'
