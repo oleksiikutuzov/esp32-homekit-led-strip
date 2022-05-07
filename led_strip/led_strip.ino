@@ -308,13 +308,14 @@ void setup() {
 
 	Serial.begin(115200);
 
-	homeSpan.setLogLevel(0);
-	homeSpan.setStatusPin(32);
-	homeSpan.setStatusAutoOff(10);
-	homeSpan.setWifiCallback(setupWeb);
-	homeSpan.setControlPin(0);
-	homeSpan.setPortNum(81);
-	homeSpan.enableAutoStartAP();
+	homeSpan.setLogLevel(0);			  // set log level to 0 (no logs)
+	homeSpan.setStatusPin(32);			  // set the status pin to GPIO32
+	homeSpan.setStatusAutoOff(10);		  // disable led after 10 seconds
+	homeSpan.setWifiCallback(setupWeb);	  // Set the callback function for wifi events
+	homeSpan.reserveSocketConnections(5); // reserve 5 socket connections for Web Server
+	homeSpan.setControlPin(0);			  // set the control pin to GPIO0
+	homeSpan.setPortNum(81);			  // set the port number to 81
+	homeSpan.enableAutoStartAP();		  // enable auto start of AP
 
 	homeSpan.begin(Category::Lighting, "Holiday Lights");
 
@@ -323,7 +324,7 @@ void setup() {
 	new Characteristic::Name("Holiday Lights");
 	new Characteristic::Manufacturer("HomeSpan");
 	new Characteristic::SerialNumber("123-ABC");
-	new Characteristic::Model("NeoPixel 60 RGBW LEDs");
+	new Characteristic::Model("NeoPixel RGB LEDs");
 	new Characteristic::FirmwareRevision("1.0");
 	new Characteristic::Identify();
 
