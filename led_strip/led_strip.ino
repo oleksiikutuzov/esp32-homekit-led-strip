@@ -25,20 +25,31 @@
  *
  ********************************************************************************/
 
-// HomeSpan Addressable RGB LED Example
+/*
+				  ESP-WROOM-32 Utilized pins
+				╔═════════════════════════════╗
+				║┌─┬─┐  ┌──┐  ┌─┐			  ║
+				║│ | └──┘  └──┘ |			  ║
+				║│ |            |			  ║
+				╠═════════════════════════════╣
+			+++ ║GND         			   GND║ +++
+			+++ ║3.3V      			   	  IO23║ USED_FOR_NOTHING
+				║     			    	  IO22║
+				║IO36    				   IO1║ TX
+				║IO39   				   IO3║ RX
+				║IO34      	  		      IO21║
+				║IO35     			    	  ║ NC
+		RED_LED ║IO32     				  IO19║
+				║IO33     			      IO18║ RELAY
+				║IO25      			       IO5║
+				║IO26     			      IO17║ NEOPIXEL
+				║IO27     			      IO16║
+				║IO14    				   IO4║
+				║IO12      		  	       IO0║ +++, BUTTON
+				╚═════════════════════════════╝
 
-// Demonstrates use of HomeSpan Pixel Class that provides for control of single-wire
-// addressable RGB LEDs, such as the SK68xx or WS28xx models found in many devices,
-// including the Espressif ESP32, ESP32-S2, and ESP32-C3 development boards.
+*/
 
-// Also demonstrates how to take advantage of the Eve HomeKit App's ability to render
-// a generic custom Characteristic.  The sketch uses a custom Characterstic to create
-// a "selector" button that enables to the user to select which special effect to run
-
-// Onboard led pin = 32
-// NEOPIXEL pin = 17
-// Mosfet pin = 18
-// Button pin = 0
 int angle	= 0;
 int counter = 0;
 
