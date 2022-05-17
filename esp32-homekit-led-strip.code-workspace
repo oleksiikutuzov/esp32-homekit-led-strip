@@ -5,6 +5,12 @@
 		},
 		{
 			"path": "../../Documents/Arduino/libraries/AsyncTCP"
+		},
+		{
+			"path": "../../Documents/Arduino/libraries/ESPAsyncWebServer"
+		},
+		{
+			"path": "../../Documents/Arduino/libraries/AsyncElegantOTA"
 		}
 	],
 	"settings": {
