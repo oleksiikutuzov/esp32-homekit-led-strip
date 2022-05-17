@@ -281,6 +281,28 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	///////////////////////////////
 };
 
+struct DEV_Switch : Service::Switch {
+
+	int					ledPin; // relay pin
+	SpanCharacteristic *power;
+
+	// Constructor
+	DEV_Switch(int ledPin) : Service::Switch() {
+		power		 = new Characteristic::On(0, true);
+		this->ledPin = ledPin;
+		pinMode(ledPin, OUTPUT);
+
+		digitalWrite(ledPin, power->getVal());
+	}
+
+	// Override update method
+	boolean update() {
+		digitalWrite(ledPin, power->getNewVal());
+
+		return (true);
+	}
+};
+
 ///////////////////////////////
 
 void setup() {
@@ -304,13 +326,20 @@ void setup() {
 	new Characteristic::Manufacturer("HomeSpan");
 	new Characteristic::SerialNumber("123-ABC");
 	new Characteristic::Model("NeoPixel RGB LEDs");
-	new Characteristic::FirmwareRevision("1.0");
+	new Characteristic::FirmwareRevision("1.1");
 	new Characteristic::Identify();
 
 	new Service::HAPProtocolInformation();
 	new Characteristic::Version("1.1.0");
 
 	new Pixel_Strand(NEOPIXEL_RGBW_PIN, 90);
+
+	new SpanAccessory();
+	new Service::AccessoryInformation();
+	new Characteristic::Name("Switch");
+	new Characteristic::Identify();
+	// new Characteristic::On();
+	new DEV_Switch(18);
 }
 
 ///////////////////////////////
