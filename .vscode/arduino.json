@@ -1,8 +1,9 @@
 {
-    "configuration": "FlashFreq=80,PartitionScheme=default,CPUFreq=240,UploadSpeed=115200",
-    "board": "esp32:esp32:lolin32",
+    "configuration": "PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,LoopCore=1,EventsCore=1,DebugLevel=none",
+    "board": "esp32:esp32:esp32",
     "port": "/dev/tty.usbserial-1410",
     "sketch": "led_strip/led_strip.ino",
     "output": "build",
-    "postbuild": "cp ./build/led_strip.ino.bin ./firmware.bin"
+    "postbuild": "cp ./build/led_strip.ino.bin ./esp32_led_strip.bin",
+    "programmer": "esptool"
 }

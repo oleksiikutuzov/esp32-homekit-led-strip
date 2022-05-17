@@ -1,9 +1,16 @@
 {
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "cSpell.words": [
+        "Berman",
         "CHPD",
         "Erriez",
+        "Espressif",
+        "LEDS",
         "manu",
+        "MAXHUE",
+        "millis",
+        "Mosfet",
+        "NEOPIXEL",
         "togther",
         "unsoliciated",
         "VINDRIKTNING",
@@ -17,8 +24,6 @@
     "arduino.additionalUrls": [
         "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
     ],
-    "arduino.commandPath": "Contents/MacOS/Arduino",
-    "arduino.path": "/Applications/Arduino.app",
     "editor.fontFamily": "Fira Code",
     "editor.fontLigatures": true,
     "files.associations": {
@@ -36,12 +41,20 @@
         "unordered_set": "cpp",
         "string_view": "cpp",
         "regex": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "cstddef": "cpp",
+        "random": "cpp"
     },
     "VsCodeTaskButtons.tasks": [
         {
             "label": "Erase Flash",
             "task": "Erase Flash",
         }
-    ]
+    ],
+    "cSpell.enableFiletypes": [
+        "!yaml"
+    ],
+    "yaml.schemas": {
+        "https://json.schemastore.org/github-workflow.json": "file:///Users/user/git/esp32-homekit-led-strip/.github/workflows/build.yml"
+    }
 }
