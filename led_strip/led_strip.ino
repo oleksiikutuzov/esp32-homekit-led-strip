@@ -25,23 +25,35 @@
  *
  ********************************************************************************/
 
-// HomeSpan Addressable RGB LED Example
+/*
+ *                ESP-WROOM-32 Utilized pins
+ *              ╔═════════════════════════════╗
+ *              ║┌─┬─┐  ┌──┐  ┌─┐             ║
+ *              ║│ | └──┘  └──┘ |             ║
+ *              ║│ |            |             ║
+ *              ╠═════════════════════════════╣
+ *          +++ ║GND                       GND║ +++
+ *          +++ ║3.3V                     IO23║ USED_FOR_NOTHING
+ *              ║                         IO22║
+ *              ║IO36                      IO1║ TX
+ *              ║IO39                      IO3║ RX
+ *              ║IO34                     IO21║
+ *              ║IO35                         ║ NC
+ *      RED_LED ║IO32                     IO19║
+ *              ║IO33                     IO18║ RELAY
+ *              ║IO25                      IO5║
+ *              ║IO26                     IO17║ NEOPIXEL
+ *              ║IO27                     IO16║
+ *              ║IO14                      IO4║
+ *              ║IO12                      IO0║ +++, BUTTON
+ *              ╚═════════════════════════════╝
+ */
 
-// Demonstrates use of HomeSpan Pixel Class that provides for control of single-wire
-// addressable RGB LEDs, such as the SK68xx or WS28xx models found in many devices,
-// including the Espressif ESP32, ESP32-S2, and ESP32-C3 development boards.
+float angle			= 0;
+int	  counter		= 0;
+int	  count_rainbow = 0;
 
-// Also demonstrates how to take advantage of the Eve HomeKit App's ability to render
-// a generic custom Characteristic.  The sketch uses a custom Characterstic to create
-// a "selector" button that enables to the user to select which special effect to run
-
-// Onboard led pin = 32
-// NEOPIXEL pin = 17
-// Mosfet pin = 18
-// Button pin = 0
-int angle	= 0;
-int counter = 0;
-
+#define MAXHUE	 360
 #define REQUIRED VERSION(1, 5, 0)
 
 #include "HomeSpan.h"
@@ -223,31 +235,9 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		}
 
 		uint32_t update() override {
+			float value = px->V.getNewVal<float>();
 			for (int i = 0; i < px->nPixels; i++) {
-				int red, green, blue;
-
-				if (angle < 60) {
-					red	  = 255;
-					green = round(angle * 4.25 - 0.01);
-					blue  = 0;
-				} else if (angle < 120) {
-					red	  = round((120 - angle) * 4.25 - 0.01);
-					green = 255;
-					blue  = 0;
-				} else if (angle < 180) {
-					red = 0, green = 255;
-					blue = round((angle - 120) * 4.25 - 0.01);
-				} else if (angle < 240) {
-					red = 0, green = round((240 - angle) * 4.25 - 0.01);
-					blue = 255;
-				} else if (angle < 300) {
-					red = round((angle - 240) * 4.25 - 0.01), green = 0;
-					blue = 255;
-				} else {
-					red = 255, green = 0;
-					blue = round((360 - angle) * 4.25 - 0.01);
-				}
-				px->colors[i] = Pixel::Color().RGB(red, green, blue, 0);
+				px->colors[i] = Pixel::Color().HSV(angle, 100, value);
 			}
 			px->pixel->set(px->colors, px->nPixels);
 			angle++;
@@ -276,14 +266,14 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		}
 
 		uint32_t update() override {
+			float value = px->V.getNewVal<float>();
 			for (int i = 0; i < px->nPixels; i++) {
-				int *rgb;
-				rgb			  = Wheel(((i * 256 / px->nPixels) + counter) & 255);
-				px->colors[i] = Pixel::Color().RGB(*rgb, *(rgb + 1), *(rgb + 2), 0);
+				px->colors[i] = Pixel::Color().HSV(i * (MAXHUE / px->nPixels) + count_rainbow, 100, value);
 			}
 			px->pixel->set(px->colors, px->nPixels);
-			counter++;
-			return (100);
+			count_rainbow++;
+			if (count_rainbow == MAXHUE) count_rainbow = 0;
+			return (200);
 		}
 
 		int requiredBuffer() override { return (px->nPixels); }
@@ -297,13 +287,14 @@ void setup() {
 
 	Serial.begin(115200);
 
-	homeSpan.setLogLevel(0);
-	homeSpan.setStatusPin(32);
-	homeSpan.setStatusAutoOff(10);
-	homeSpan.setWifiCallback(setupWeb);
-	homeSpan.setControlPin(0);
-	homeSpan.setPortNum(81);
-	homeSpan.enableAutoStartAP();
+	homeSpan.setLogLevel(0);			  // set log level to 0 (no logs)
+	homeSpan.setStatusPin(32);			  // set the status pin to GPIO32
+	homeSpan.setStatusAutoOff(10);		  // disable led after 10 seconds
+	homeSpan.setWifiCallback(setupWeb);	  // Set the callback function for wifi events
+	homeSpan.reserveSocketConnections(5); // reserve 5 socket connections for Web Server
+	homeSpan.setControlPin(0);			  // set the control pin to GPIO0
+	homeSpan.setPortNum(81);			  // set the port number to 81
+	homeSpan.enableAutoStartAP();		  // enable auto start of AP
 
 	homeSpan.begin(Category::Lighting, "Holiday Lights");
 
@@ -312,7 +303,7 @@ void setup() {
 	new Characteristic::Name("Holiday Lights");
 	new Characteristic::Manufacturer("HomeSpan");
 	new Characteristic::SerialNumber("123-ABC");
-	new Characteristic::Model("NeoPixel 60 RGBW LEDs");
+	new Characteristic::Model("NeoPixel RGB LEDs");
 	new Characteristic::FirmwareRevision("1.0");
 	new Characteristic::Identify();
 
@@ -329,29 +320,6 @@ void loop() {
 }
 
 ///////////////////////////////
-
-int *Wheel(byte WheelPos) {
-	static int rgb[3];
-	WheelPos = 255 - WheelPos;
-	if (WheelPos < 85) {
-		rgb[0] = 255 - WheelPos * 3;
-		rgb[1] = 0;
-		rgb[2] = WheelPos * 3;
-		return rgb;
-	}
-	if (WheelPos < 170) {
-		WheelPos -= 85;
-		rgb[0] = 0;
-		rgb[1] = WheelPos * 3;
-		rgb[2] = 255 - WheelPos * 3;
-		return rgb;
-	}
-	WheelPos -= 170;
-	rgb[0] = WheelPos * 3;
-	rgb[1] = 255 - WheelPos * 3;
-	rgb[2] = 0;
-	return rgb;
-}
 
 void setupWeb() {
 	server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request) {
