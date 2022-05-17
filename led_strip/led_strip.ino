@@ -26,33 +26,34 @@
  ********************************************************************************/
 
 /*
-				  ESP-WROOM-32 Utilized pins
-				╔═════════════════════════════╗
-				║┌─┬─┐  ┌──┐  ┌─┐			  ║
-				║│ | └──┘  └──┘ |			  ║
-				║│ |            |			  ║
-				╠═════════════════════════════╣
-			+++ ║GND         			   GND║ +++
-			+++ ║3.3V      			   	  IO23║ USED_FOR_NOTHING
-				║     			    	  IO22║
-				║IO36    				   IO1║ TX
-				║IO39   				   IO3║ RX
-				║IO34      	  		      IO21║
-				║IO35     			    	  ║ NC
-		RED_LED ║IO32     				  IO19║
-				║IO33     			      IO18║ RELAY
-				║IO25      			       IO5║
-				║IO26     			      IO17║ NEOPIXEL
-				║IO27     			      IO16║
-				║IO14    				   IO4║
-				║IO12      		  	       IO0║ +++, BUTTON
-				╚═════════════════════════════╝
+ *                ESP-WROOM-32 Utilized pins
+ *              ╔═════════════════════════════╗
+ *              ║┌─┬─┐  ┌──┐  ┌─┐             ║
+ *              ║│ | └──┘  └──┘ |             ║
+ *              ║│ |            |             ║
+ *              ╠═════════════════════════════╣
+ *          +++ ║GND                       GND║ +++
+ *          +++ ║3.3V                     IO23║ USED_FOR_NOTHING
+ *              ║                         IO22║
+ *              ║IO36                      IO1║ TX
+ *              ║IO39                      IO3║ RX
+ *              ║IO34                     IO21║
+ *              ║IO35                         ║ NC
+ *      RED_LED ║IO32                     IO19║
+ *              ║IO33                     IO18║ RELAY
+ *              ║IO25                      IO5║
+ *              ║IO26                     IO17║ NEOPIXEL
+ *              ║IO27                     IO16║
+ *              ║IO14                      IO4║
+ *              ║IO12                      IO0║ +++, BUTTON
+ *              ╚═════════════════════════════╝
+ */
 
-*/
+float angle			= 0;
+int	  counter		= 0;
+int	  count_rainbow = 0;
 
-int angle	= 0;
-int counter = 0;
-
+#define MAXHUE	 360
 #define REQUIRED VERSION(1, 5, 0)
 
 #include "HomeSpan.h"
@@ -265,14 +266,14 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		}
 
 		uint32_t update() override {
+			float value = px->V.getNewVal<float>();
 			for (int i = 0; i < px->nPixels; i++) {
-				int *rgb;
-				rgb			  = Wheel(((i * 256 / px->nPixels) + counter) & 255);
-				px->colors[i] = Pixel::Color().RGB(*rgb, *(rgb + 1), *(rgb + 2), 0);
+				px->colors[i] = Pixel::Color().HSV(i * (MAXHUE / px->nPixels) + count_rainbow, 100, value);
 			}
 			px->pixel->set(px->colors, px->nPixels);
-			counter++;
-			return (100);
+			count_rainbow++;
+			if (count_rainbow == MAXHUE) count_rainbow = 0;
+			return (200);
 		}
 
 		int requiredBuffer() override { return (px->nPixels); }
@@ -319,29 +320,6 @@ void loop() {
 }
 
 ///////////////////////////////
-
-int *Wheel(byte WheelPos) {
-	static int rgb[3];
-	WheelPos = 255 - WheelPos;
-	if (WheelPos < 85) {
-		rgb[0] = 255 - WheelPos * 3;
-		rgb[1] = 0;
-		rgb[2] = WheelPos * 3;
-		return rgb;
-	}
-	if (WheelPos < 170) {
-		WheelPos -= 85;
-		rgb[0] = 0;
-		rgb[1] = WheelPos * 3;
-		rgb[2] = 255 - WheelPos * 3;
-		return rgb;
-	}
-	WheelPos -= 170;
-	rgb[0] = WheelPos * 3;
-	rgb[1] = 255 - WheelPos * 3;
-	rgb[2] = 0;
-	return rgb;
-}
 
 void setupWeb() {
 	server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request) {
