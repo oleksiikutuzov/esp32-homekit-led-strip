@@ -49,12 +49,13 @@
  *              ╚═════════════════════════════╝
  */
 
-float angle			= 0;
-int	  counter		= 0;
-int	  count_rainbow = 0;
+float angle		  = 0;
+int	  counter	  = 0;
+int	  count_wheel = 0;
 
 #define MAXHUE	 360
 #define REQUIRED VERSION(1, 5, 0)
+// #define RELAY
 
 #include "HomeSpan.h"
 #include "extras/Pixel.h" // include the HomeSpan Pixel class
@@ -119,10 +120,8 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		this->nPixels = nPixels;			   // store number of Pixels in Strand
 
 		Effects.push_back(new ManualControl(this));
-		// Effects.push_back(new KnightRider(this));
-		// Effects.push_back(new Random(this));
-		Effects.push_back(new RainbowSolid(this));
 		Effects.push_back(new Rainbow(this));
+		Effects.push_back(new Colorwheel(this));
 
 		effect.setUnit(""); // configures custom "Selector" characteristic for use with Eve HomeKit
 		effect.setDescription("Color Effect");
@@ -164,36 +163,6 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 
 	//////////////
 
-	struct KnightRider : SpecialEffect {
-
-		int phase = 0;
-		int dir	  = 1;
-
-		KnightRider(Pixel_Strand *px) : SpecialEffect{px, "KnightRider"} {}
-
-		void init() override {
-			float level = px->V.getNewVal<float>();
-			for (int i = 0; i < px->nPixels; i++, level *= 0.8) {
-				px->colors[px->nPixels + i - 1].HSV(px->H.getNewVal<float>(), px->S.getNewVal<float>(), level);
-				px->colors[px->nPixels - i - 1] = px->colors[px->nPixels + i - 1];
-			}
-		}
-
-		uint32_t update() override {
-			px->pixel->set(px->colors + phase, px->nPixels);
-			if (phase == px->nPixels - 1)
-				dir = -1;
-			else if (phase == 0)
-				dir = 1;
-			phase += dir;
-			return (20);
-		}
-
-		int requiredBuffer() override { return (px->nPixels * 2 - 1); }
-	};
-
-	//////////////
-
 	struct ManualControl : SpecialEffect {
 
 		ManualControl(Pixel_Strand *px) : SpecialEffect{px, "Manual Control"} {}
@@ -202,28 +171,11 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	};
 
 	//////////////
-
-	struct Random : SpecialEffect {
-
-		Random(Pixel_Strand *px) : SpecialEffect{px, "Random"} {}
-
-		uint32_t update() override {
-			for (int i = 0; i < px->nPixels; i++)
-				px->colors[i].HSV((esp_random() % 6) * 60, 100, px->V.getNewVal<float>());
-			px->pixel->set(px->colors, px->nPixels);
-			return (1000);
-		}
-
-		int requiredBuffer() override { return (px->nPixels); }
-	};
-
-	///////////////////////////////
-
-	struct RainbowSolid : SpecialEffect {
+	struct Rainbow : SpecialEffect {
 
 		int8_t *dir;
 
-		RainbowSolid(Pixel_Strand *px) : SpecialEffect{px, "Rainbow Solid"} {
+		Rainbow(Pixel_Strand *px) : SpecialEffect{px, "Rainbow"} {
 			dir = (int8_t *)calloc(px->nPixels, sizeof(int8_t));
 		}
 
@@ -249,12 +201,11 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	};
 
 	///////////////////////////////
-
-	struct Rainbow : SpecialEffect {
+	struct Colorwheel : SpecialEffect {
 
 		int8_t *dir;
 
-		Rainbow(Pixel_Strand *px) : SpecialEffect{px, "Rainbow"} {
+		Colorwheel(Pixel_Strand *px) : SpecialEffect{px, "Colorwheel"} {
 			dir = (int8_t *)calloc(px->nPixels, sizeof(int8_t));
 		}
 
@@ -268,11 +219,11 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		uint32_t update() override {
 			float value = px->V.getNewVal<float>();
 			for (int i = 0; i < px->nPixels; i++) {
-				px->colors[i] = Pixel::Color().HSV(i * (MAXHUE / px->nPixels) + count_rainbow, 100, value);
+				px->colors[i] = Pixel::Color().HSV(i * (MAXHUE / px->nPixels) + count_wheel, 100, value);
 			}
 			px->pixel->set(px->colors, px->nPixels);
-			count_rainbow++;
-			if (count_rainbow == MAXHUE) count_rainbow = 0;
+			count_wheel++;
+			if (count_wheel == px->nPixels * MAXHUE) count_wheel = 0;
 			return (200);
 		}
 
@@ -281,6 +232,7 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	///////////////////////////////
 };
 
+#ifdef RELAY
 struct DEV_Switch : Service::Switch {
 
 	int					ledPin; // relay pin
@@ -302,6 +254,7 @@ struct DEV_Switch : Service::Switch {
 		return (true);
 	}
 };
+#endif
 
 ///////////////////////////////
 
@@ -334,12 +287,13 @@ void setup() {
 
 	new Pixel_Strand(NEOPIXEL_RGBW_PIN, 90);
 
+#ifdef RELAY
 	new SpanAccessory();
 	new Service::AccessoryInformation();
 	new Characteristic::Name("Switch");
 	new Characteristic::Identify();
-	// new Characteristic::On();
 	new DEV_Switch(18);
+#endif
 }
 
 ///////////////////////////////
