@@ -50,9 +50,9 @@
  */
 
 float angle		  = 0;
-int	  counter	  = 0;
-int	  count_wheel = 0;
+long  count_wheel = 0;
 
+#define MAX_LEDS 120
 #define MAXHUE	 360
 #define REQUIRED VERSION(1, 5, 0)
 // #define RELAY
@@ -78,6 +78,7 @@ int	  count_wheel = 0;
 
 // clang-format off
 CUSTOM_CHAR(Selector, 00000001-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 3, false); // create Custom Characteristic to "select" special effects via Eve App
+CUSTOM_CHAR(NumLeds, 00000002-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 90, 1, MAX_LEDS, false);
 // clang-format on
 
 // declare function
@@ -106,6 +107,7 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	Characteristic::Saturation S{100, true};
 	Characteristic::Brightness V{100, true};
 	Characteristic::Selector   effect{1, true};
+	Characteristic::NumLeds	   num_leds{90, true};
 
 	vector<SpecialEffect *> Effects;
 
@@ -114,10 +116,9 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	Pixel::Color *colors;
 	uint32_t	  alarmTime;
 
-	Pixel_Strand(int pin, int nPixels) : Service::LightBulb() {
+	Pixel_Strand(int pin) : Service::LightBulb() {
 
-		pixel		  = new Pixel(pin, false); // creates RGBW pixel LED on specified pin using default timing parameters suitable for most SK68xx LEDs
-		this->nPixels = nPixels;			   // store number of Pixels in Strand
+		pixel = new Pixel(pin, false); // creates RGBW pixel LED on specified pin using default timing parameters suitable for most SK68xx LEDs
 
 		Effects.push_back(new ManualControl(this));
 		Effects.push_back(new Rainbow(this));
@@ -127,7 +128,13 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		effect.setDescription("Color Effect");
 		effect.setRange(1, Effects.size(), 1);
 
+		num_leds.setUnit(""); // configures custom "Selector" characteristic for use with Eve HomeKit
+		num_leds.setDescription("Number of LEDs");
+		num_leds.setRange(1, MAX_LEDS, 1);
+
 		V.setRange(5, 100, 1); // sets the range of the Brightness to be from a min of 5%, to a max of 100%, in steps of 1%
+
+		this->nPixels = num_leds.getNewVal(); // store number of Pixels in Strand
 
 		int bufSize = 0;
 
@@ -136,7 +143,7 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 
 		colors = (Pixel::Color *)calloc(bufSize, sizeof(Pixel::Color)); // storage for dynamic pixel pattern
 
-		Serial.printf("\nConfigured Pixel_Strand on pin %d with %d pixels and %d effects.  Color buffer = %d pixels\n\n", pin, nPixels, Effects.size(), bufSize);
+		Serial.printf("\nConfigured Pixel_Strand on pin %d with %d pixels and %d effects.  Color buffer = %d pixels\n\n", pin, this->nPixels, Effects.size(), bufSize);
 
 		update();
 	}
@@ -144,7 +151,7 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	boolean update() override {
 
 		if (!power.getNewVal()) {
-			pixel->set(Pixel::Color().RGB(0, 0, 0, 0), nPixels);
+			pixel->set(Pixel::Color().RGB(0, 0, 0, 0), this->nPixels);
 		} else {
 			Effects[effect.getNewVal() - 1]->init();
 			alarmTime = millis() + Effects[effect.getNewVal() - 1]->update();
@@ -223,7 +230,6 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 			}
 			px->pixel->set(px->colors, px->nPixels);
 			count_wheel++;
-			if (count_wheel == px->nPixels * MAXHUE) count_wheel = 0;
 			return (200);
 		}
 
@@ -285,7 +291,7 @@ void setup() {
 	new Service::HAPProtocolInformation();
 	new Characteristic::Version("1.1.0");
 
-	new Pixel_Strand(NEOPIXEL_RGBW_PIN, 90);
+	new Pixel_Strand(NEOPIXEL_RGBW_PIN);
 
 #ifdef RELAY
 	new SpanAccessory();
