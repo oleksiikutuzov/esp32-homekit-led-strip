@@ -3018,9 +3018,6 @@ USE AT YOUR OWN RISK!&lt;p&gt;
 <part name="SUPPLY21" library="Power_Symbols" deviceset="+5V" device="" value="+5V"/>
 <part name="SUPPLY22" library="Power_Symbols" deviceset="GND" device="" value="GND"/>
 <part name="R7" library="Resistor" deviceset="R" device="CHIP-0603(1608-METRIC)" package3d_urn="urn:adsk.eagle:package:16378565/2" technology="_" value="300-500 ohm"/>
-<part name="C3" library="Capacitor" deviceset="C" device="CHIP-0603(1608-METRIC)" package3d_urn="urn:adsk.eagle:package:16290898/2" technology="_" value="10uF"/>
-<part name="C4" library="Capacitor" deviceset="C" device="CHIP-0603(1608-METRIC)" package3d_urn="urn:adsk.eagle:package:16290898/2" technology="_" value="10uF"/>
-<part name="C5" library="Capacitor" deviceset="C" device="CHIP-0603(1608-METRIC)" package3d_urn="urn:adsk.eagle:package:16290898/2" technology="_" value="10uF"/>
 <part name="R2" library="Resistor" deviceset="R" device="CHIP-0603(1608-METRIC)" package3d_urn="urn:adsk.eagle:package:16378565/2" technology="_" value="5.1k"/>
 </parts>
 <sheets>
@@ -3117,11 +3114,11 @@ USE AT YOUR OWN RISK!&lt;p&gt;
 <attribute name="NAME" x="139.065" y="130.81" size="1.778" layer="95" rot="R90"/>
 <attribute name="VALUE" x="152.4" y="130.81" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="SUPPLY19" gate="G$1" x="157.48" y="165.1" smashed="yes">
-<attribute name="VALUE" x="157.353" y="168.148" size="1.778" layer="96" align="bottom-center"/>
+<instance part="SUPPLY19" gate="G$1" x="154.94" y="119.38" smashed="yes" rot="R180">
+<attribute name="VALUE" x="155.067" y="116.332" size="1.778" layer="96" rot="R180" align="bottom-center"/>
 </instance>
-<instance part="SUPPLY20" gate="G$1" x="132.08" y="167.64" smashed="yes" rot="R180">
-<attribute name="VALUE" x="132.08" y="170.18" size="1.778" layer="96" rot="R180" align="center"/>
+<instance part="SUPPLY20" gate="G$1" x="134.62" y="116.84" smashed="yes">
+<attribute name="VALUE" x="134.62" y="114.3" size="1.778" layer="96" align="center"/>
 </instance>
 <instance part="J3" gate="G$1" x="111.76" y="172.72" smashed="yes" rot="R90">
 <attribute name="NAME" x="108.458" y="171.45" size="1.778" layer="95" rot="R90"/>
@@ -3147,18 +3144,6 @@ USE AT YOUR OWN RISK!&lt;p&gt;
 <instance part="R7" gate="G$1" x="144.78" y="111.76" smashed="yes" rot="R90">
 <attribute name="NAME" x="142.24" y="111.76" size="1.778" layer="95" rot="R90" align="center"/>
 <attribute name="VALUE" x="147.32" y="111.76" size="1.778" layer="96" rot="R90" align="center"/>
-</instance>
-<instance part="C3" gate="G$1" x="143.256" y="153.924" smashed="yes" rot="R90">
-<attribute name="NAME" x="140.716" y="158.496" size="1.778" layer="95" rot="R180"/>
-<attribute name="VALUE" x="146.304" y="156.464" size="1.778" layer="96"/>
-</instance>
-<instance part="C4" gate="G$1" x="143.256" y="148.844" smashed="yes" rot="R90">
-<attribute name="NAME" x="140.716" y="153.416" size="1.778" layer="95" rot="R180"/>
-<attribute name="VALUE" x="146.304" y="151.384" size="1.778" layer="96"/>
-</instance>
-<instance part="C5" gate="G$1" x="143.256" y="159.004" smashed="yes" rot="R90">
-<attribute name="NAME" x="140.716" y="163.576" size="1.778" layer="95" rot="R180"/>
-<attribute name="VALUE" x="146.304" y="161.544" size="1.778" layer="96"/>
 </instance>
 <instance part="R2" gate="G$1" x="-38.1" y="96.52" smashed="yes">
 <attribute name="NAME" x="-38.1" y="99.06" size="1.778" layer="95" align="center"/>
@@ -3265,24 +3250,11 @@ USE AT YOUR OWN RISK!&lt;p&gt;
 </segment>
 <segment>
 <pinref part="SUPPLY20" gate="G$1" pin="GND"/>
-<wire x1="132.08" y1="165.1" x2="132.08" y2="159.004" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="159.004" x2="132.08" y2="153.924" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="153.924" x2="132.08" y2="149.86" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="148.844" x2="132.08" y2="124.46" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="124.46" x2="142.24" y2="124.46" width="0.1524" layer="91"/>
+<wire x1="134.62" y1="119.38" x2="134.62" y2="124.46" width="0.1524" layer="91"/>
+<wire x1="134.62" y1="124.46" x2="142.24" y2="124.46" width="0.1524" layer="91"/>
 <wire x1="142.24" y1="124.46" x2="142.24" y2="134.62" width="0.1524" layer="91"/>
 <pinref part="LED1" gate="A" pin="1"/>
 <label x="142.24" y="139.7" size="1.778" layer="95" rot="R90"/>
-<pinref part="C3" gate="G$1" pin="1"/>
-<wire x1="140.716" y1="153.924" x2="132.08" y2="153.924" width="0.1524" layer="91"/>
-<pinref part="C5" gate="G$1" pin="1"/>
-<wire x1="140.716" y1="159.004" x2="132.08" y2="159.004" width="0.1524" layer="91"/>
-<pinref part="C4" gate="G$1" pin="1"/>
-<wire x1="140.716" y1="148.844" x2="132.08" y2="148.844" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="148.844" x2="132.08" y2="149.86" width="0.1524" layer="91"/>
-<junction x="132.08" y="159.004"/>
-<junction x="132.08" y="153.924"/>
-<junction x="132.08" y="148.844"/>
 </segment>
 </net>
 <net name="+5V" class="1">
@@ -3315,24 +3287,11 @@ USE AT YOUR OWN RISK!&lt;p&gt;
 </segment>
 <segment>
 <pinref part="SUPPLY19" gate="G$1" pin="+5V"/>
-<wire x1="157.48" y1="165.1" x2="157.48" y2="159.004" width="0.1524" layer="91"/>
-<wire x1="157.48" y1="159.004" x2="157.48" y2="153.924" width="0.1524" layer="91"/>
-<wire x1="157.48" y1="153.924" x2="157.48" y2="149.86" width="0.1524" layer="91"/>
-<wire x1="157.48" y1="148.844" x2="157.48" y2="124.46" width="0.1524" layer="91"/>
-<wire x1="157.48" y1="124.46" x2="147.32" y2="124.46" width="0.1524" layer="91"/>
+<wire x1="154.94" y1="119.38" x2="154.94" y2="124.46" width="0.1524" layer="91"/>
+<wire x1="154.94" y1="124.46" x2="147.32" y2="124.46" width="0.1524" layer="91"/>
 <wire x1="147.32" y1="124.46" x2="147.32" y2="134.62" width="0.1524" layer="91"/>
 <pinref part="LED1" gate="A" pin="3"/>
 <label x="147.32" y="139.7" size="1.778" layer="95" rot="R90"/>
-<pinref part="C3" gate="G$1" pin="2"/>
-<wire x1="148.336" y1="153.924" x2="157.48" y2="153.924" width="0.1524" layer="91"/>
-<pinref part="C5" gate="G$1" pin="2"/>
-<wire x1="148.336" y1="159.004" x2="157.48" y2="159.004" width="0.1524" layer="91"/>
-<pinref part="C4" gate="G$1" pin="2"/>
-<wire x1="148.336" y1="148.844" x2="157.48" y2="148.844" width="0.1524" layer="91"/>
-<wire x1="157.48" y1="148.844" x2="157.48" y2="149.86" width="0.1524" layer="91"/>
-<junction x="157.48" y="159.004"/>
-<junction x="157.48" y="153.924"/>
-<junction x="157.48" y="148.844"/>
 </segment>
 </net>
 <net name="+3.3V" class="1">
@@ -3502,7 +3461,6 @@ USE AT YOUR OWN RISK!&lt;p&gt;
 <approved hash="104,1,-55.88,48.26,U1,VIN,+5V,,,"/>
 <approved hash="104,1,-30.48,48.26,U1,VOUT,+3.3V,,,"/>
 <approved hash="104,1,-50.8,104.14,J1,VBUS,+5V,,,"/>
-<approved hash="113,1,57.15,58.3667,ESP8266-12F,,,,,"/>
 </errors>
 </schematic>
 </drawing>

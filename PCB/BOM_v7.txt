@@ -1,9 +1,6 @@
 Part Value             Device                   Package               Description                                                                               
-C1   10uF              C_CHIP-0603(1608-METRIC) CAPC1608X85           Capacitor - Generic  (voltage converter)                                                                     
+C1   10uF              C_CHIP-0603(1608-METRIC) CAPC1608X85           Capacitor - Generic  (voltage converter)                                               
 C2   10uF              C_CHIP-0603(1608-METRIC) CAPC1608X85           Capacitor - Generic  (voltage converter)                                                   
-C3   10uF              C_CHIP-0603(1608-METRIC) CAPC1608X85           Capacitor - Generic                                                                       
-C4   10uF              C_CHIP-0603(1608-METRIC) CAPC1608X85           Capacitor - Generic                                                                       
-C5   10uF              C_CHIP-0603(1608-METRIC) CAPC1608X85           Capacitor - Generic                                                                       
 D1   LED               CHIP-FLAT-R_0603-0.80MM  LEDC1608X80N_FLAT-R                                                                                             
 J1   USB4125-GF-A_REVA USB4125-GF-A_REVA        GCT_USB4125-GF-A_REVA USB 2.0 Type C Receptacle, Horizontal, SMT, For Power charging  Check prices Warning     
 J2   F-1X04-SIP-100-40 F-1X04-SIP-100-40        SIP-100-04-40         FEMALE HEADER                                                                             
@@ -19,6 +16,6 @@ R6   1k                R_CHIP-0603(1608-METRIC) RESC1608X60           Resistor F
 R7   300-500 ohm       R_CHIP-0603(1608-METRIC) RESC1608X60           Resistor Fixed - Generic                                                                  
 R8   430               R_CHIP-0603(1608-METRIC) RESC1608X60           Resistor Fixed - Generic                                                                  
 S1   SKRPACE010        SKRPACE010               SW_SKRPACE010         Switch Tactile N.O. SPST Button J-Bend 0.05A 16VDC 2.55N SMD Automotive T/R              
-S2   SKRPACE010        SKRPACE010               SW_SKRPACE010         Switch Tactile N.O. SPST Button J-Bend 0.05A 16VDC 2.55N SMD Automotive T/R                                                                                                                                                                                                             Maniufacturer Recommendations                                                                    
+S2   SKRPACE010        SKRPACE010               SW_SKRPACE010         Switch Tactile N.O. SPST Button J-Bend 0.05A 16VDC 2.55N SMD Automotive T/R           
 U1   AP2112K-3.3TRG1   AP2112K-3.3TRG1          SOT95P285X140-5N      AP2112 Series 0.6 A 3.3 V Fixed Output SMT LDO Linear Regulator - SOT23-5                
 U2   ESP32-WROOM       ESP32-WROOM              ESP32-WROOM                                                                                                    
