@@ -11,6 +11,19 @@ _As usual, don't expect any warranties. I am just a hobbyist, not a professional
 
 Custom PCB is designed for the project. Currently for regular ESP32 board, however there are plans to do for ESP32-C3, which has smaller footprint.
 
+## HomeKit functions
+
+Device has three modes, which can be switched via the Eve app. As they are custim characteristics, they are not visible in the Home app:
+* Manual Control (manually set one single color)
+* Rainbow (the whole strip is changing colors)
+* Color Wheel (strip has different colors "running" along)
+
+Also in the Eve app you can set the number of LEDs in your strip (default is 90). After changing this characteristic, you need to restart the controller for changes to take effect. 
+
+Characteristics values are saved to NVS, so they will be restored if device looses power. 
+
+At the moment you can enable the Switch device in the sketch by defining the `RELAY` variable, but in the future this will implemented via custom characteristic as well to be able to enable it when device is running.
+
 ## Software
 
 Here you can see, which pins are used and pre-defined in the firmware:
