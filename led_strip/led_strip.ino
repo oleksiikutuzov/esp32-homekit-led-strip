@@ -76,9 +76,12 @@ long  count_wheel = 0;
 
 #endif
 
+void addSwitch();
+
 // clang-format off
 CUSTOM_CHAR(Selector, 00000001-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 3, false); // create Custom Characteristic to "select" special effects via Eve App
 CUSTOM_CHAR(NumLeds, 00000002-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 90, 1, MAX_LEDS, false);
+CUSTOM_CHAR(RelayEnabled, 00000003-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, false, false, false, false);
 // clang-format on
 
 // declare function
@@ -102,12 +105,13 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		virtual int		 requiredBuffer() { return (0); }
 	};
 
-	Characteristic::On		   power{0, true};
-	Characteristic::Hue		   H{0, true};
-	Characteristic::Saturation S{100, true};
-	Characteristic::Brightness V{100, true};
-	Characteristic::Selector   effect{1, true};
-	Characteristic::NumLeds	   num_leds{90, true};
+	Characteristic::On			 power{0, true};
+	Characteristic::Hue			 H{0, true};
+	Characteristic::Saturation	 S{100, true};
+	Characteristic::Brightness	 V{100, true};
+	Characteristic::Selector	 effect{1, true};
+	Characteristic::NumLeds		 num_leds{90, true};
+	Characteristic::RelayEnabled relay_enabled{false, true};
 
 	vector<SpecialEffect *> Effects;
 
@@ -131,6 +135,8 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		num_leds.setUnit(""); // configures custom "Selector" characteristic for use with Eve HomeKit
 		num_leds.setDescription("Number of LEDs");
 		num_leds.setRange(1, MAX_LEDS, 1);
+
+		relay_enabled.setDescription("Relay Enabled");
 
 		V.setRange(5, 100, 1); // sets the range of the Brightness to be from a min of 5%, to a max of 100%, in steps of 1%
 
@@ -157,6 +163,17 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 			alarmTime = millis() + Effects[effect.getNewVal() - 1]->update();
 			if (effect.updated())
 				Serial.printf("Effect changed to: %s\n", Effects[effect.getNewVal() - 1]->name);
+		}
+		if (relay_enabled.getNewVal()) {
+			LOG0("Relay Enabled\n");
+			// addSwitch();
+			// homeSpan.updateDatabase();
+			LOG0("Accessories Database updated.  New configuration number broadcasted...\n");
+		} else {
+			LOG0("Relay Disabled\n");
+			// homeSpan.deleteAccessory(2);
+			// homeSpan.updateDatabase();
+			LOG0("Nothing to update - no changes were made!\n");
 		}
 
 		return (true);
@@ -238,7 +255,6 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	///////////////////////////////
 };
 
-#ifdef RELAY
 struct DEV_Switch : Service::Switch {
 
 	int					ledPin; // relay pin
@@ -260,7 +276,6 @@ struct DEV_Switch : Service::Switch {
 		return (true);
 	}
 };
-#endif
 
 ///////////////////////////////
 
@@ -279,7 +294,7 @@ void setup() {
 
 	homeSpan.begin(Category::Lighting, "Holiday Lights");
 
-	new SpanAccessory();
+	new SpanAccessory(1);
 	new Service::AccessoryInformation();
 	new Characteristic::Name("Holiday Lights");
 	new Characteristic::Manufacturer("HomeSpan");
@@ -323,3 +338,14 @@ void setupWeb() {
 	server.begin();
 	LOG1("HTTP server started");
 } // setupWeb
+
+void addSwitch() {
+
+	LOG0("Adding Accessory: Switch\n");
+
+	new SpanAccessory(2);
+	new Service::AccessoryInformation();
+	new Characteristic::Name("Switch");
+	new Characteristic::Identify();
+	new DEV_Switch(18);
+}
