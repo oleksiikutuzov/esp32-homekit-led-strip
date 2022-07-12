@@ -59,8 +59,8 @@ long  count_wheel = 0;
 
 #include "HomeSpan.h"
 #include "extras/Pixel.h" // include the HomeSpan Pixel class
-#include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
+#include <ESPAsyncWebServer.h>
 
 #if defined(CONFIG_IDF_TARGET_ESP32)
 
@@ -92,7 +92,7 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 
 	struct SpecialEffect {
 		Pixel_Strand *px;
-		const char   *name;
+		const char	 *name;
 
 		SpecialEffect(Pixel_Strand *px, const char *name) {
 			this->px   = px;
@@ -115,7 +115,7 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 
 	vector<SpecialEffect *> Effects;
 
-	Pixel		  *pixel;
+	Pixel		 *pixel;
 	int			  nPixels;
 	Pixel::Color *colors;
 	uint32_t	  alarmTime;
@@ -326,6 +326,18 @@ void loop() {
 ///////////////////////////////
 
 void setupWeb() {
+
+	server.on("/metrics", HTTP_GET, [](AsyncWebServerRequest *request) {
+		double uptime		= esp_timer_get_time() / (6 * 10e6);
+		double heap			= esp_get_free_heap_size();
+		String uptimeMetric = "# HELP uptime LED Strip uptime\nuptime{device=\"led_strip\",location=\"home\"} " + String(int(uptime));
+		String heapMetric	= "# HELP heap Available heap memory\nheap{device=\"led_strip\",location=\"home\"} " + String(int(heap));
+
+		Serial.println(uptimeMetric);
+		Serial.println(heapMetric);
+		request->send(200, "text/plain", uptimeMetric + "\n" + heapMetric);
+	});
+
 	server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request) {
 		String content = "<html><body>Rebooting!  Will return to configuration page in 10 seconds.<br><br>";
 		content += "<meta http-equiv = \"refresh\" content = \"10; url = /\" />";
