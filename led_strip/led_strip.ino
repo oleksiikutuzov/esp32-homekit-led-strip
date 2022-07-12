@@ -55,12 +55,17 @@ long  count_wheel = 0;
 #define MAX_LEDS 120
 #define MAXHUE	 360
 #define REQUIRED VERSION(1, 5, 0)
-// #define RELAY
 
 #include "HomeSpan.h"
 #include "extras/Pixel.h" // include the HomeSpan Pixel class
 #include <AsyncElegantOTA.h>
 #include <ESPAsyncWebServer.h>
+
+uint16_t relay;
+
+// We will use non-volatile storage (NVS) to store the devices array so that the device can restore the current configuration upon rebooting
+
+nvs_handle savedData; // declare savedData as a handle to be used with the NVS (see the ESP32-IDF for details on how to use NVS storage)
 
 #if defined(CONFIG_IDF_TARGET_ESP32)
 
@@ -81,7 +86,7 @@ void addSwitch();
 // clang-format off
 CUSTOM_CHAR(Selector, 00000001-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 3, false); // create Custom Characteristic to "select" special effects via Eve App
 CUSTOM_CHAR(NumLeds, 00000002-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 90, 1, MAX_LEDS, false);
-CUSTOM_CHAR(RelayEnabled, 00000003-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, false, false, false, false);
+CUSTOM_CHAR(RelayEnabled, 00000003-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, 0, 0, 1, false);
 // clang-format on
 
 // declare function
@@ -136,7 +141,7 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		num_leds.setDescription("Number of LEDs");
 		num_leds.setRange(1, MAX_LEDS, 1);
 
-		relay_enabled.setDescription("Relay Enabled");
+		relay_enabled.setDescription("Switch Enabled");
 
 		V.setRange(5, 100, 1); // sets the range of the Brightness to be from a min of 5%, to a max of 100%, in steps of 1%
 
@@ -164,16 +169,25 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 			if (effect.updated())
 				Serial.printf("Effect changed to: %s\n", Effects[effect.getNewVal() - 1]->name);
 		}
-		if (relay_enabled.getNewVal()) {
-			LOG0("Relay Enabled\n");
-			// addSwitch();
-			// homeSpan.updateDatabase();
-			LOG0("Accessories Database updated.  New configuration number broadcasted...\n");
-		} else {
-			LOG0("Relay Disabled\n");
-			// homeSpan.deleteAccessory(2);
-			// homeSpan.updateDatabase();
-			LOG0("Nothing to update - no changes were made!\n");
+		if (relay_enabled.updated()) {
+			int relay_status = relay_enabled.getNewVal();
+			if (relay_enabled.getNewVal()) {
+				LOG0("Relay Enabled\n");
+				// write to nvs
+				nvs_set_u16(savedData, "switch_enabled", 1);
+				nvs_commit(savedData);
+				addSwitch();
+				homeSpan.updateDatabase();
+				LOG0("Accessories Database updated.  New configuration number broadcasted...\n");
+			} else {
+				LOG0("Relay Disabled\n");
+				// write to nvs
+				nvs_set_u16(savedData, "switch_enabled", 0);
+				nvs_commit(savedData);
+				homeSpan.deleteAccessory(2);
+				homeSpan.updateDatabase();
+				LOG0("Nothing to update - no changes were made!\n");
+			}
 		}
 
 		return (true);
@@ -283,6 +297,12 @@ void setup() {
 
 	Serial.begin(115200);
 
+	relay = 0; // initialize devices array with zeros in each of the 2 elements (no Accessories defined)
+
+	nvs_open("SAVED_DATA", NVS_READWRITE, &savedData); // open a new namespace called SAVED_DATA in the NVS
+													   // if (!nvs_get_u16(savedData, "relay_enabled", &relay)) // if RELAY data found
+	nvs_get_u16(savedData, "switch_enabled", &relay);  // retrieve data
+
 	homeSpan.setLogLevel(0);			  // set log level to 0 (no logs)
 	homeSpan.setStatusPin(32);			  // set the status pin to GPIO32
 	homeSpan.setStatusAutoOff(10);		  // disable led after 10 seconds
@@ -308,13 +328,9 @@ void setup() {
 
 	new Pixel_Strand(NEOPIXEL_RGBW_PIN);
 
-#ifdef RELAY
-	new SpanAccessory();
-	new Service::AccessoryInformation();
-	new Characteristic::Name("Switch");
-	new Characteristic::Identify();
-	new DEV_Switch(18);
-#endif
+	if (relay == 1) {
+		addSwitch();
+	}
 }
 
 ///////////////////////////////
