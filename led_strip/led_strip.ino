@@ -299,9 +299,9 @@ void setup() {
 
 	relay = 0; // initialize devices array with zeros in each of the 2 elements (no Accessories defined)
 
-	nvs_open("SAVED_DATA", NVS_READWRITE, &savedData); // open a new namespace called SAVED_DATA in the NVS
-													   // if (!nvs_get_u16(savedData, "relay_enabled", &relay)) // if RELAY data found
-	nvs_get_u16(savedData, "switch_enabled", &relay);  // retrieve data
+	nvs_open("SAVED_DATA", NVS_READWRITE, &savedData);	  // open a new namespace called SAVED_DATA in the NVS
+	if (!nvs_get_u16(savedData, "relay_enabled", &relay)) // if RELAY data found
+		nvs_get_u16(savedData, "switch_enabled", &relay); // retrieve data
 
 	homeSpan.setLogLevel(0);			  // set log level to 0 (no logs)
 	homeSpan.setStatusPin(32);			  // set the status pin to GPIO32
@@ -346,8 +346,8 @@ void setupWeb() {
 	server.on("/metrics", HTTP_GET, [](AsyncWebServerRequest *request) {
 		double uptime		= esp_timer_get_time() / (6 * 10e6);
 		double heap			= esp_get_free_heap_size();
-		String uptimeMetric = "# HELP uptime LED Strip uptime\nuptime{device=\"led_strip\",location=\"home\"} " + String(int(uptime));
-		String heapMetric	= "# HELP heap Available heap memory\nheap{device=\"led_strip\",location=\"home\"} " + String(int(heap));
+		String uptimeMetric = "# HELP uptime LED Strip uptime\nhomekit_uptime{device=\"led_strip\",location=\"home\"} " + String(int(uptime));
+		String heapMetric	= "# HELP heap Available heap memory\nhomekit_heap{device=\"led_strip\",location=\"home\"} " + String(int(heap));
 
 		Serial.println(uptimeMetric);
 		Serial.println(heapMetric);
