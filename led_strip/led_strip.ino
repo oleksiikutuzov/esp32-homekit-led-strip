@@ -63,6 +63,8 @@ long  count_wheel = 0;
 
 uint16_t relay;
 
+char sNumber[18] = "11:11:11:11:11:11";
+
 // We will use non-volatile storage (NVS) to store the devices array so that the device can restore the current configuration upon rebooting
 
 nvs_handle savedData; // declare savedData as a handle to be used with the NVS (see the ESP32-IDF for details on how to use NVS storage)
@@ -297,10 +299,16 @@ void setup() {
 
 	Serial.begin(115200);
 
+	for (int i = 0; i < 17; ++i) // we will iterate through each character in WiFi.macAddress() and copy it to the global char sNumber[]
+	{
+		sNumber[i] = WiFi.macAddress()[i];
+	}
+	sNumber[17] = '\0'; // the last charater needs to be a null
+
 	relay = 0; // initialize devices array with zeros in each of the 2 elements (no Accessories defined)
 
 	nvs_open("SAVED_DATA", NVS_READWRITE, &savedData);	  // open a new namespace called SAVED_DATA in the NVS
-	if (!nvs_get_u16(savedData, "relay_enabled", &relay)) // if RELAY data found
+	if (nvs_get_u16(savedData, "relay_enabled", &relay))  // if RELAY data found
 		nvs_get_u16(savedData, "switch_enabled", &relay); // retrieve data
 
 	homeSpan.setLogLevel(0);			  // set log level to 0 (no logs)
@@ -318,7 +326,7 @@ void setup() {
 	new Service::AccessoryInformation();
 	new Characteristic::Name("Holiday Lights");
 	new Characteristic::Manufacturer("HomeSpan");
-	new Characteristic::SerialNumber("123-ABC");
+	new Characteristic::SerialNumber(sNumber);
 	new Characteristic::Model("NeoPixel RGB LEDs");
 	new Characteristic::FirmwareRevision("1.1");
 	new Characteristic::Identify();
