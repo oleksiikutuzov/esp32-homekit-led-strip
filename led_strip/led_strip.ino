@@ -54,7 +54,7 @@ long  count_wheel = 0;
 
 #define MAX_LEDS 120
 #define MAXHUE	 360
-#define REQUIRED VERSION(1, 5, 2)
+#define REQUIRED VERSION(1, 6, 0)
 
 #include "HomeSpan.h"
 #include "extras/Pixel.h" // include the HomeSpan Pixel class
@@ -260,11 +260,11 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		uint32_t update() override {
 			float value = px->V.getNewVal<float>();
 			for (int i = 0; i < px->nPixels; i++) {
-				px->colors[i] = Pixel::Color().HSV(i * (MAXHUE / px->nPixels) + count_wheel, 100, value);
+				int h		  = (i * (MAXHUE / px->nPixels) + count_wheel) % MAXHUE;
+				px->colors[i] = Pixel::Color().HSV(h, 100, value);
 			}
 			px->pixel->set(px->colors, px->nPixels);
-			count_wheel++;
-			if (count_wheel == MAXHUE) count_wheel = 0;
+			if (count_wheel++ == MAXHUE) count_wheel = 0;
 			return (200);
 		}
 
