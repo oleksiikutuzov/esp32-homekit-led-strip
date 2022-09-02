@@ -61,6 +61,7 @@ long  count_wheel = 0;
 #include <WiFiClient.h>
 #include <WebServer.h>
 #include <ElegantOTA.h>
+#include "OTA.hpp"
 
 uint16_t relay;
 
@@ -90,6 +91,8 @@ void addSwitch();
 CUSTOM_CHAR(Selector, 00000001-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 3, false); // create Custom Characteristic to "select" special effects via Eve App
 CUSTOM_CHAR(NumLeds, 00000002-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 90, 1, MAX_LEDS, false);
 CUSTOM_CHAR(RelayEnabled, 00000003-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, 0, 0, 1, false);
+CUSTOM_CHAR(AnimSpeed, 00000004-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 10, false);
+
 // clang-format on
 
 // declare function
@@ -120,6 +123,7 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	Characteristic::Selector	 effect{1, true};
 	Characteristic::NumLeds		 num_leds{90, true};
 	Characteristic::RelayEnabled relay_enabled{false, true};
+	Characteristic::AnimSpeed	 anim_speed{1, true};
 
 	vector<SpecialEffect *> Effects;
 
@@ -143,6 +147,10 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		num_leds.setUnit(""); // configures custom "Selector" characteristic for use with Eve HomeKit
 		num_leds.setDescription("Number of LEDs");
 		num_leds.setRange(1, MAX_LEDS, 1);
+
+		anim_speed.setUnit(""); // configures custom "Selector" characteristic for use with Eve HomeKit
+		anim_speed.setDescription("Animation Speed");
+		anim_speed.setRange(1, 10, 1);
 
 		relay_enabled.setDescription("Switch Enabled");
 
@@ -233,9 +241,9 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 				px->colors[i] = Pixel::Color().HSV(angle, 100, value);
 			}
 			px->pixel->set(px->colors, px->nPixels);
-			angle++;
-			if (angle == 360) angle = 0;
-			return (100);
+			if (angle++ == 360) angle = 0;
+			int speed = px->anim_speed.getVal();
+			return (200 / speed);
 		}
 
 		int requiredBuffer() override { return (px->nPixels); }
@@ -265,7 +273,8 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 			}
 			px->pixel->set(px->colors, px->nPixels);
 			if (count_wheel++ == MAXHUE) count_wheel = 0;
-			return (200);
+			int speed = px->anim_speed.getVal();
+			return (200 / speed);
 		}
 
 		int requiredBuffer() override { return (px->nPixels); }
@@ -301,6 +310,17 @@ void setup() {
 
 	Serial.begin(115200);
 
+	Serial.print("Active firmware version: ");
+	Serial.println(FirmwareVer);
+
+	String	   temp			  = FW_VERSION;
+	const char compile_date[] = __DATE__ " " __TIME__;
+	char	  *fw_ver		  = new char[temp.length() + 30];
+	strcpy(fw_ver, temp.c_str());
+	strcat(fw_ver, " (");
+	strcat(fw_ver, compile_date);
+	strcat(fw_ver, ")");
+
 	for (int i = 0; i < 17; ++i) // we will iterate through each character in WiFi.macAddress() and copy it to the global char sNumber[]
 	{
 		sNumber[i] = WiFi.macAddress()[i];
@@ -322,6 +342,7 @@ void setup() {
 	homeSpan.setPortNum(88);										// set the port number to 81
 	homeSpan.enableAutoStartAP();									// enable auto start of AP
 	homeSpan.enableWebLog(10, "pool.ntp.org", "UTC-2:00", "myLog"); // enable Web Log
+	homeSpan.setSketchVersion(fw_ver);
 
 	homeSpan.begin(Category::Lighting, "Holiday Lights");
 
@@ -331,7 +352,7 @@ void setup() {
 	new Characteristic::Manufacturer("HomeSpan");
 	new Characteristic::SerialNumber(sNumber);
 	new Characteristic::Model("NeoPixel RGB LEDs");
-	new Characteristic::FirmwareRevision("1.2");
+	new Characteristic::FirmwareRevision(temp.c_str());
 	new Characteristic::Identify();
 
 	new Service::HAPProtocolInformation();
@@ -349,6 +370,7 @@ void setup() {
 void loop() {
 	homeSpan.poll();
 	server.handleClient();
+	repeatedCall();
 }
 
 ///////////////////////////////

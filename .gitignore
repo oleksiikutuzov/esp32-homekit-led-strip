@@ -1,4 +1,4 @@
 .DS_Store
 build/
-*.bin
+esp32_led_strip_*.bin
 *.code-workspace
