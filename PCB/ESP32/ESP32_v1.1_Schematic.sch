@@ -3461,6 +3461,7 @@ USE AT YOUR OWN RISK!&lt;p&gt;
 <approved hash="104,1,-55.88,48.26,U1,VIN,+5V,,,"/>
 <approved hash="104,1,-30.48,48.26,U1,VOUT,+3.3V,,,"/>
 <approved hash="104,1,-50.8,104.14,J1,VBUS,+5V,,,"/>
+<approved hash="113,1,57.15,58.3667,ESP8266-12F,,,,,"/>
 </errors>
 </schematic>
 </drawing>

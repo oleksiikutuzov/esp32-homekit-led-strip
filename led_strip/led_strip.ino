@@ -54,13 +54,22 @@ long  count_wheel = 0;
 
 #define MAX_LEDS 120
 #define MAXHUE	 360
-#define REQUIRED VERSION(1, 5, 0)
-// #define RELAY
+#define REQUIRED VERSION(1, 6, 0)
 
 #include "HomeSpan.h"
 #include "extras/Pixel.h" // include the HomeSpan Pixel class
-#include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
+#include <ElegantOTA.h>
+#include "OTA.hpp"
+
+uint16_t relay;
+
+char sNumber[18] = "11:11:11:11:11:11";
+
+// We will use non-volatile storage (NVS) to store the devices array so that the device can restore the current configuration upon rebooting
+
+nvs_handle savedData; // declare savedData as a handle to be used with the NVS (see the ESP32-IDF for details on how to use NVS storage)
 
 #if defined(CONFIG_IDF_TARGET_ESP32)
 
@@ -81,18 +90,20 @@ void addSwitch();
 // clang-format off
 CUSTOM_CHAR(Selector, 00000001-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 3, false); // create Custom Characteristic to "select" special effects via Eve App
 CUSTOM_CHAR(NumLeds, 00000002-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 90, 1, MAX_LEDS, false);
-CUSTOM_CHAR(RelayEnabled, 00000003-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, false, false, false, false);
+CUSTOM_CHAR(RelayEnabled, 00000003-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, 0, 0, 1, false);
+CUSTOM_CHAR(AnimSpeed, 00000004-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 10, false);
+
 // clang-format on
 
 // declare function
 int *Wheel(byte WheelPos);
 ///////////////////////////////
-AsyncWebServer server(80);
+WebServer server(80);
 struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of nPixel Pixels
 
 	struct SpecialEffect {
 		Pixel_Strand *px;
-		const char   *name;
+		const char	 *name;
 
 		SpecialEffect(Pixel_Strand *px, const char *name) {
 			this->px   = px;
@@ -112,10 +123,11 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	Characteristic::Selector	 effect{1, true};
 	Characteristic::NumLeds		 num_leds{90, true};
 	Characteristic::RelayEnabled relay_enabled{false, true};
+	Characteristic::AnimSpeed	 anim_speed{1, true};
 
 	vector<SpecialEffect *> Effects;
 
-	Pixel		  *pixel;
+	Pixel		 *pixel;
 	int			  nPixels;
 	Pixel::Color *colors;
 	uint32_t	  alarmTime;
@@ -136,7 +148,11 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		num_leds.setDescription("Number of LEDs");
 		num_leds.setRange(1, MAX_LEDS, 1);
 
-		relay_enabled.setDescription("Relay Enabled");
+		anim_speed.setUnit(""); // configures custom "Selector" characteristic for use with Eve HomeKit
+		anim_speed.setDescription("Animation Speed");
+		anim_speed.setRange(1, 10, 1);
+
+		relay_enabled.setDescription("Switch Enabled");
 
 		V.setRange(5, 100, 1); // sets the range of the Brightness to be from a min of 5%, to a max of 100%, in steps of 1%
 
@@ -164,16 +180,25 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 			if (effect.updated())
 				Serial.printf("Effect changed to: %s\n", Effects[effect.getNewVal() - 1]->name);
 		}
-		if (relay_enabled.getNewVal()) {
-			LOG0("Relay Enabled\n");
-			// addSwitch();
-			// homeSpan.updateDatabase();
-			LOG0("Accessories Database updated.  New configuration number broadcasted...\n");
-		} else {
-			LOG0("Relay Disabled\n");
-			// homeSpan.deleteAccessory(2);
-			// homeSpan.updateDatabase();
-			LOG0("Nothing to update - no changes were made!\n");
+		if (relay_enabled.updated()) {
+			int relay_status = relay_enabled.getNewVal();
+			if (relay_enabled.getNewVal()) {
+				LOG0("Relay Enabled\n");
+				// write to nvs
+				nvs_set_u16(savedData, "switch_enabled", 1);
+				nvs_commit(savedData);
+				addSwitch();
+				homeSpan.updateDatabase();
+				LOG0("Accessories Database updated.  New configuration number broadcasted...\n");
+			} else {
+				LOG0("Relay Disabled\n");
+				// write to nvs
+				nvs_set_u16(savedData, "switch_enabled", 0);
+				nvs_commit(savedData);
+				homeSpan.deleteAccessory(2);
+				homeSpan.updateDatabase();
+				LOG0("Nothing to update - no changes were made!\n");
+			}
 		}
 
 		return (true);
@@ -216,9 +241,9 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 				px->colors[i] = Pixel::Color().HSV(angle, 100, value);
 			}
 			px->pixel->set(px->colors, px->nPixels);
-			angle++;
-			if (angle == 360) angle = 0;
-			return (100);
+			if (angle++ == 360) angle = 0;
+			int speed = px->anim_speed.getVal();
+			return (200 / speed);
 		}
 
 		int requiredBuffer() override { return (px->nPixels); }
@@ -243,11 +268,13 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		uint32_t update() override {
 			float value = px->V.getNewVal<float>();
 			for (int i = 0; i < px->nPixels; i++) {
-				px->colors[i] = Pixel::Color().HSV(i * (MAXHUE / px->nPixels) + count_wheel, 100, value);
+				int h		  = (i * (MAXHUE / px->nPixels) + count_wheel) % MAXHUE;
+				px->colors[i] = Pixel::Color().HSV(h, 100, value);
 			}
 			px->pixel->set(px->colors, px->nPixels);
-			count_wheel++;
-			return (200);
+			if (count_wheel++ == MAXHUE) count_wheel = 0;
+			int speed = px->anim_speed.getVal();
+			return (200 / speed);
 		}
 
 		int requiredBuffer() override { return (px->nPixels); }
@@ -283,14 +310,39 @@ void setup() {
 
 	Serial.begin(115200);
 
-	homeSpan.setLogLevel(0);			  // set log level to 0 (no logs)
-	homeSpan.setStatusPin(32);			  // set the status pin to GPIO32
-	homeSpan.setStatusAutoOff(10);		  // disable led after 10 seconds
-	homeSpan.setWifiCallback(setupWeb);	  // Set the callback function for wifi events
-	homeSpan.reserveSocketConnections(5); // reserve 5 socket connections for Web Server
-	homeSpan.setControlPin(0);			  // set the control pin to GPIO0
-	homeSpan.setPortNum(81);			  // set the port number to 81
-	homeSpan.enableAutoStartAP();		  // enable auto start of AP
+	Serial.print("Active firmware version: ");
+	Serial.println(FirmwareVer);
+
+	String	   temp			  = FW_VERSION;
+	const char compile_date[] = __DATE__ " " __TIME__;
+	char	  *fw_ver		  = new char[temp.length() + 30];
+	strcpy(fw_ver, temp.c_str());
+	strcat(fw_ver, " (");
+	strcat(fw_ver, compile_date);
+	strcat(fw_ver, ")");
+
+	for (int i = 0; i < 17; ++i) // we will iterate through each character in WiFi.macAddress() and copy it to the global char sNumber[]
+	{
+		sNumber[i] = WiFi.macAddress()[i];
+	}
+	sNumber[17] = '\0'; // the last charater needs to be a null
+
+	relay = 0; // initialize devices array with zeros in each of the 2 elements (no Accessories defined)
+
+	nvs_open("SAVED_DATA", NVS_READWRITE, &savedData);	  // open a new namespace called SAVED_DATA in the NVS
+	if (nvs_get_u16(savedData, "switch_enabled", &relay)) // if RELAY data found
+		nvs_get_u16(savedData, "switch_enabled", &relay); // retrieve data
+
+	homeSpan.setLogLevel(0);										// set log level to 0 (no logs)
+	homeSpan.setStatusPin(32);										// set the status pin to GPIO32
+	homeSpan.setStatusAutoOff(10);									// disable led after 10 seconds
+	homeSpan.setWifiCallback(setupWeb);								// Set the callback function for wifi events
+	homeSpan.reserveSocketConnections(5);							// reserve 5 socket connections for Web Server
+	homeSpan.setControlPin(0);										// set the control pin to GPIO0
+	homeSpan.setPortNum(88);										// set the port number to 81
+	homeSpan.enableAutoStartAP();									// enable auto start of AP
+	homeSpan.enableWebLog(10, "pool.ntp.org", "UTC-2:00", "myLog"); // enable Web Log
+	homeSpan.setSketchVersion(fw_ver);
 
 	homeSpan.begin(Category::Lighting, "Holiday Lights");
 
@@ -298,9 +350,9 @@ void setup() {
 	new Service::AccessoryInformation();
 	new Characteristic::Name("Holiday Lights");
 	new Characteristic::Manufacturer("HomeSpan");
-	new Characteristic::SerialNumber("123-ABC");
+	new Characteristic::SerialNumber(sNumber);
 	new Characteristic::Model("NeoPixel RGB LEDs");
-	new Characteristic::FirmwareRevision("1.1");
+	new Characteristic::FirmwareRevision(temp.c_str());
 	new Characteristic::Identify();
 
 	new Service::HAPProtocolInformation();
@@ -308,33 +360,43 @@ void setup() {
 
 	new Pixel_Strand(NEOPIXEL_RGBW_PIN);
 
-#ifdef RELAY
-	new SpanAccessory();
-	new Service::AccessoryInformation();
-	new Characteristic::Name("Switch");
-	new Characteristic::Identify();
-	new DEV_Switch(18);
-#endif
+	if (relay == 1) {
+		addSwitch();
+	}
 }
 
 ///////////////////////////////
 
 void loop() {
 	homeSpan.poll();
+	server.handleClient();
+	repeatedCall();
 }
 
 ///////////////////////////////
 
 void setupWeb() {
-	server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+	server.on("/metrics", HTTP_GET, []() {
+		double uptime		= esp_timer_get_time() / (6 * 10e6);
+		double heap			= esp_get_free_heap_size();
+		String uptimeMetric = "# HELP uptime LED Strip uptime\nhomekit_uptime{device=\"led_strip\",location=\"home\"} " + String(int(uptime));
+		String heapMetric	= "# HELP heap Available heap memory\nhomekit_heap{device=\"led_strip\",location=\"home\"} " + String(int(heap));
+
+		Serial.println(uptimeMetric);
+		Serial.println(heapMetric);
+		server.send(200, "text/plain", uptimeMetric + "\n" + heapMetric);
+	});
+
+	server.on("/reboot", HTTP_GET, []() {
 		String content = "<html><body>Rebooting!  Will return to configuration page in 10 seconds.<br><br>";
 		content += "<meta http-equiv = \"refresh\" content = \"10; url = /\" />";
-		request->send(200, "text/html", content);
+		server.send(200, "text/html", content);
 
 		ESP.restart();
 	});
 
-	AsyncElegantOTA.begin(&server); // Start AsyncElegantOTA
+	ElegantOTA.begin(&server); // Start ElegantOTA
 	server.begin();
 	LOG1("HTTP server started");
 } // setupWeb
