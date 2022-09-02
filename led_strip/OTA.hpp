@@ -8,7 +8,7 @@
 #define URL_fw_Version "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/bin_version.txt"
 #define URL_fw_Bin	   "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/esp32_led_strip.bin"
 
-#define FW_VERSION	   "1.3.1"
+#define FW_VERSION	   "1.3.2"
 
 String FirmwareVer = {
 	FW_VERSION};
