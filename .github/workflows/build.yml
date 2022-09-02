@@ -2,7 +2,7 @@ name: Build sketch
 on: [push, pull_request]
 jobs:
   build:
-    name: Test compiling examples for esp32
+    name: Test compiling sketch for esp32
     runs-on: ubuntu-latest
 
     steps:
