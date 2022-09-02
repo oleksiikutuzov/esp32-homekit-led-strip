@@ -6,9 +6,9 @@
 #include <HomeSpan.h>
 
 #define URL_fw_Version "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/bin_version.txt"
-#define URL_fw_Bin	   "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/esp32_air_quality.bin"
+#define URL_fw_Bin	   "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/esp32_led_strip.bin"
 
-#define FW_VERSION	   "1.3.0"
+#define FW_VERSION	   "1.3.1"
 
 String FirmwareVer = {
 	FW_VERSION};
