@@ -2,39 +2,25 @@ name: Build sketch
 on: [push, pull_request]
 jobs:
   build:
-    name: Test compiling examples for esp32
+    name: Test compiling sketch for esp32
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Checkout ESPAsyncWebServer library
+      - name: Checkout ElegantOTA library
         uses: actions/checkout@v2
         with:
-          repository: me-no-dev/ESPAsyncWebServer
+          repository: ayushsharma82/ElegantOTA
           ref: master
-          path: CustomESPAsyncWebServer # must contain string "Custom"
-
-      - name: Checkout AsyncElegantOTA library
-        uses: actions/checkout@v2
-        with:
-          repository: ayushsharma82/AsyncElegantOTA
-          ref: master
-          path: CustomAsyncElegantOTA
-
-      - name: Checkout AsyncTCP library
-        uses: actions/checkout@v2
-        with:
-          repository: me-no-dev/AsyncTCP
-          ref: master
-          path: CustomAsyncTCP
+          path: CustomElegantOTA
 
       - name: "Compile sketch"
         uses: ArminJo/arduino-test-compile@v3
         with:
           sketch-names: "led_strip.ino"
-          arduino-board-fqbn: "esp32:esp32:esp32:PSRAM=disabled,PartitionScheme=default,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,LoopCore=1,EventsCore=1,DebugLevel=none"
+          arduino-board-fqbn: "esp32:esp32:esp32c3:CDCOnBoot=default,PartitionScheme=default,CPUFreq=160,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=115200,DebugLevel=none"
           platform-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
           required-libraries: HomeSpan
           # sketches-exclude: WhistleSwitch 50Hz
