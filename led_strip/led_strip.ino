@@ -67,10 +67,6 @@ uint16_t relay;
 
 char sNumber[18] = "11:11:11:11:11:11";
 
-// We will use non-volatile storage (NVS) to store the devices array so that the device can restore the current configuration upon rebooting
-
-nvs_handle savedData; // declare savedData as a handle to be used with the NVS (see the ESP32-IDF for details on how to use NVS storage)
-
 #if defined(CONFIG_IDF_TARGET_ESP32)
 
 #define NEOPIXEL_RGBW_PIN 17
@@ -92,7 +88,6 @@ CUSTOM_CHAR(Selector, 00000001-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8,
 CUSTOM_CHAR(NumLeds, 00000002-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 90, 1, MAX_LEDS, false);
 CUSTOM_CHAR(RelayEnabled, 00000003-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, 0, 0, 1, false);
 CUSTOM_CHAR(AnimSpeed, 00000004-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 10, false);
-
 // clang-format on
 
 // declare function
@@ -184,17 +179,11 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 			int relay_status = relay_enabled.getNewVal();
 			if (relay_enabled.getNewVal()) {
 				LOG0("Relay Enabled\n");
-				// write to nvs
-				nvs_set_u16(savedData, "switch_enabled", 1);
-				nvs_commit(savedData);
 				addSwitch();
 				homeSpan.updateDatabase();
 				LOG0("Accessories Database updated.  New configuration number broadcasted...\n");
 			} else {
 				LOG0("Relay Disabled\n");
-				// write to nvs
-				nvs_set_u16(savedData, "switch_enabled", 0);
-				nvs_commit(savedData);
 				homeSpan.deleteAccessory(2);
 				homeSpan.updateDatabase();
 				LOG0("Nothing to update - no changes were made!\n");
@@ -306,6 +295,8 @@ struct DEV_Switch : Service::Switch {
 
 ///////////////////////////////
 
+Pixel_Strand *STRIP;
+
 void setup() {
 
 	Serial.begin(115200);
@@ -326,12 +317,6 @@ void setup() {
 		sNumber[i] = WiFi.macAddress()[i];
 	}
 	sNumber[17] = '\0'; // the last charater needs to be a null
-
-	relay = 0; // initialize devices array with zeros in each of the 2 elements (no Accessories defined)
-
-	nvs_open("SAVED_DATA", NVS_READWRITE, &savedData);	  // open a new namespace called SAVED_DATA in the NVS
-	if (nvs_get_u16(savedData, "switch_enabled", &relay)) // if RELAY data found
-		nvs_get_u16(savedData, "switch_enabled", &relay); // retrieve data
 
 	homeSpan.setLogLevel(0);										// set log level to 0 (no logs)
 	homeSpan.setStatusPin(32);										// set the status pin to GPIO32
@@ -358,9 +343,9 @@ void setup() {
 	new Service::HAPProtocolInformation();
 	new Characteristic::Version("1.1.0");
 
-	new Pixel_Strand(NEOPIXEL_RGBW_PIN);
+	STRIP = new Pixel_Strand(NEOPIXEL_RGBW_PIN);
 
-	if (relay == 1) {
+	if (STRIP->relay_enabled.getVal()) {
 		addSwitch();
 	}
 }
