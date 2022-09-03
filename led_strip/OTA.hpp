@@ -8,7 +8,7 @@
 #define URL_fw_Version "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/bin_version.txt"
 #define URL_fw_Bin	   "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/esp32_led_strip.bin"
 
-#define FW_VERSION	   "1.3.3"
+#define FW_VERSION	   "1.3.4"
 
 String FirmwareVer = {
 	FW_VERSION};
@@ -17,7 +17,7 @@ void firmwareUpdate();
 int	 FirmwareVersionCheck();
 
 unsigned long previousMillis = 0; // will store last time LED was updated
-const long	  interval		 = 60000;
+const long	  interval		 = 60 * 60 * 1000; // 1 hour in ms
 
 void repeatedCall() {
 	static int	  num			= 0;
