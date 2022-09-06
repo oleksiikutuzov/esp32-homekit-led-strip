@@ -208,9 +208,11 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		if (millis() > alarmTime && power.getVal())
 			alarmTime = millis() + Effects[effect.getNewVal() - 1]->update();
 
-		if (auto_update.timeVal() > INTERVAL && auto_update.getVal()) {
-			if (FirmwareVersionCheck()) {
-				firmwareUpdate();
+		if (auto_update.timeVal() > INTERVAL) {
+			if (auto_update.getVal()) {
+				if (FirmwareVersionCheck()) {
+					firmwareUpdate();
+				}
 			}
 		}
 	}
