@@ -90,6 +90,7 @@ CUSTOM_CHAR(NumLeds, 00000002-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 
 CUSTOM_CHAR(RelayEnabled, 00000003-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, 0, 0, 1, false);
 CUSTOM_CHAR(AnimSpeed, 00000004-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 10, false);
 CUSTOM_CHAR(AutoUpdate, 00000005-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, 0, 0, 1, false);
+CUSTOM_CHAR_STRING(IPAddress, 00000006-0001-0001-0001-46637266EA00, PR + EV, "");
 // clang-format on
 
 // declare function
@@ -122,6 +123,7 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	Characteristic::RelayEnabled relay_enabled{false, true};
 	Characteristic::AnimSpeed	 anim_speed{1, true};
 	Characteristic::AutoUpdate	 auto_update{false, true};
+	Characteristic::IPAddress	 ip_address{"0.0.0.0"};
 
 	vector<SpecialEffect *>
 		Effects;
@@ -154,6 +156,8 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		relay_enabled.setDescription("Switch Enabled");
 
 		auto_update.setDescription("Auto OTA Update");
+
+		ip_address.setDescription("IP Address");
 
 		V.setRange(5, 100, 1); // sets the range of the Brightness to be from a min of 5%, to a max of 100%, in steps of 1%
 
@@ -393,6 +397,7 @@ void setupWeb() {
 		ESP.restart();
 	});
 
+	STRIP->ip_address.setString(WiFi.localIP().toString().c_str());
 	ElegantOTA.begin(&server); // Start ElegantOTA
 	server.begin();
 	LOG1("HTTP server started");

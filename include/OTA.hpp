@@ -18,7 +18,7 @@
 #define URL_fw_Bin "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/esp32c3_led_strip.bin"
 #endif
 
-#define FW_VERSION "1.3.5"
+#define FW_VERSION "1.3.6"
 
 String FirmwareVer = {
 	FW_VERSION};
