@@ -18,7 +18,7 @@
 #define URL_fw_Bin "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/esp32c3_led_strip.bin"
 #endif
 
-#define FW_VERSION "1.3.5"
+#define FW_VERSION "1.3.6"
 
 String FirmwareVer = {
 	FW_VERSION};
@@ -26,21 +26,21 @@ String FirmwareVer = {
 void firmwareUpdate();
 int	 FirmwareVersionCheck();
 
-unsigned long previousMillis = 0;			   // will store last time LED was updated
-const long	  interval		 = 60 * 60 * 1000; // 1 hour in ms
+unsigned long previousMillis = 0; // will store last time LED was updated
+#define INTERVAL 60 * 60 * 1000	  // 1 hour in ms
 
-void repeatedCall() {
-	static int	  num			= 0;
-	unsigned long currentMillis = millis();
+// void repeatedCall() {
+// 	static int	  num			= 0;
+// 	unsigned long currentMillis = millis();
 
-	if ((currentMillis - previousMillis) >= interval) {
-		// save the last time you blinked the LED
-		previousMillis = currentMillis;
-		if (FirmwareVersionCheck()) {
-			firmwareUpdate();
-		}
-	}
-}
+// 	if ((currentMillis - previousMillis) >= interval) {
+// 		// save the last time you blinked the LED
+// 		previousMillis = currentMillis;
+// 		if (FirmwareVersionCheck()) {
+// 			firmwareUpdate();
+// 		}
+// 	}
+// }
 
 void firmwareUpdate(void) {
 	WiFiClientSecure client;

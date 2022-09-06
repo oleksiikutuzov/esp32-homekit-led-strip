@@ -89,6 +89,8 @@ CUSTOM_CHAR(Selector, 00000001-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8,
 CUSTOM_CHAR(NumLeds, 00000002-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 90, 1, MAX_LEDS, false);
 CUSTOM_CHAR(RelayEnabled, 00000003-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, 0, 0, 1, false);
 CUSTOM_CHAR(AnimSpeed, 00000004-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 10, false);
+CUSTOM_CHAR(AutoUpdate, 00000005-0001-0001-0001-46637266EA00, PR + PW + EV, BOOL, 0, 0, 1, false);
+CUSTOM_CHAR_STRING(IPAddress, 00000006-0001-0001-0001-46637266EA00, PR + EV, "");
 // clang-format on
 
 // declare function
@@ -120,8 +122,11 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 	Characteristic::NumLeds		 num_leds{90, true};
 	Characteristic::RelayEnabled relay_enabled{false, true};
 	Characteristic::AnimSpeed	 anim_speed{1, true};
+	Characteristic::AutoUpdate	 auto_update{false, true};
+	Characteristic::IPAddress	 ip_address{"0.0.0.0"};
 
-	vector<SpecialEffect *> Effects;
+	vector<SpecialEffect *>
+		Effects;
 
 	Pixel		 *pixel;
 	int			  nPixels;
@@ -149,6 +154,10 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 		anim_speed.setRange(1, 10, 1);
 
 		relay_enabled.setDescription("Switch Enabled");
+
+		auto_update.setDescription("Auto OTA Update");
+
+		ip_address.setDescription("IP Address");
 
 		V.setRange(5, 100, 1); // sets the range of the Brightness to be from a min of 5%, to a max of 100%, in steps of 1%
 
@@ -198,6 +207,12 @@ struct Pixel_Strand : Service::LightBulb { // Addressable RGBW Pixel Strand of n
 
 		if (millis() > alarmTime && power.getVal())
 			alarmTime = millis() + Effects[effect.getNewVal() - 1]->update();
+
+		if (auto_update.timeVal() > INTERVAL && auto_update.getVal()) {
+			if (FirmwareVersionCheck()) {
+				firmwareUpdate();
+			}
+		}
 	}
 
 	//////////////
@@ -356,7 +371,7 @@ void setup() {
 void loop() {
 	homeSpan.poll();
 	server.handleClient();
-	repeatedCall();
+	// repeatedCall();
 }
 
 ///////////////////////////////
@@ -382,6 +397,7 @@ void setupWeb() {
 		ESP.restart();
 	});
 
+	STRIP->ip_address.setString(WiFi.localIP().toString().c_str());
 	ElegantOTA.begin(&server); // Start ElegantOTA
 	server.begin();
 	LOG1("HTTP server started");
