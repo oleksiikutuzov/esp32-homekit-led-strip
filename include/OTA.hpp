@@ -26,21 +26,21 @@ String FirmwareVer = {
 void firmwareUpdate();
 int	 FirmwareVersionCheck();
 
-unsigned long previousMillis = 0;			   // will store last time LED was updated
-const long	  interval		 = 60 * 60 * 1000; // 1 hour in ms
+unsigned long previousMillis = 0; // will store last time LED was updated
+#define INTERVAL 60 * 60 * 1000	  // 1 hour in ms
 
-void repeatedCall() {
-	static int	  num			= 0;
-	unsigned long currentMillis = millis();
+// void repeatedCall() {
+// 	static int	  num			= 0;
+// 	unsigned long currentMillis = millis();
 
-	if ((currentMillis - previousMillis) >= interval) {
-		// save the last time you blinked the LED
-		previousMillis = currentMillis;
-		if (FirmwareVersionCheck()) {
-			firmwareUpdate();
-		}
-	}
-}
+// 	if ((currentMillis - previousMillis) >= interval) {
+// 		// save the last time you blinked the LED
+// 		previousMillis = currentMillis;
+// 		if (FirmwareVersionCheck()) {
+// 			firmwareUpdate();
+// 		}
+// 	}
+// }
 
 void firmwareUpdate(void) {
 	WiFiClientSecure client;
