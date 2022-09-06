@@ -1,6 +1,8 @@
 # esp32-homekit-led-strip
 Native Apple HomeKit via an ESP32 for the NeoPixel LED Strip or any 5V LED Strip
 
+[![Build sketch](https://github.com/oleksiikutuzov/esp32-homekit-led-strip/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/oleksiikutuzov/esp32-homekit-led-strip/actions/workflows/build.yml)
+
 Software is based on [HomeSpan](https://github.com/HomeSpan/HomeSpan) library. Supports RGB or RGBW Neopixel strips and optionally can act like a switch for any 5V electronics (Switch accessory in HomeKit can be shown as a Bulb, Socket or Fan).
 
 _As usual, don't expect any warranties. I am just a hobbyist, not a professional. It works for me, but you take your own risk using it. I am not liable for any damage to your devices._

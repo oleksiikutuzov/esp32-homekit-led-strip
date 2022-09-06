@@ -82,6 +82,7 @@ char sNumber[18] = "11:11:11:11:11:11";
 #endif
 
 void addSwitch();
+void setupWeb();
 
 // clang-format off
 CUSTOM_CHAR(Selector, 00000001-0001-0001-0001-46637266EA00, PR + PW + EV, UINT8, 1, 1, 3, false); // create Custom Characteristic to "select" special effects via Eve App

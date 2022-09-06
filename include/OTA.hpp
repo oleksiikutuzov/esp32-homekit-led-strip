@@ -5,10 +5,20 @@
 #include "cert.hpp"
 #include <HomeSpan.h>
 
-#define URL_fw_Version "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/bin_version.txt"
-#define URL_fw_Bin	   "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/esp32_led_strip.bin"
+// 1 - ESP32, 2 - ESP32-C3
+#ifndef BOARD
+#define BOARD 1
+#endif
 
-#define FW_VERSION	   "1.3.4"
+#define URL_fw_Version "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/bin_version.txt"
+
+#if BOARD == 1
+#define URL_fw_Bin "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/esp32_led_strip.bin"
+#elif BOARD == 2
+#define URL_fw_Bin "https://raw.githubusercontent.com/oleksiikutuzov/esp32-homekit-led-strip/main/esp32c3_led_strip.bin"
+#endif
+
+#define FW_VERSION "1.3.5"
 
 String FirmwareVer = {
 	FW_VERSION};
@@ -16,7 +26,7 @@ String FirmwareVer = {
 void firmwareUpdate();
 int	 FirmwareVersionCheck();
 
-unsigned long previousMillis = 0; // will store last time LED was updated
+unsigned long previousMillis = 0;			   // will store last time LED was updated
 const long	  interval		 = 60 * 60 * 1000; // 1 hour in ms
 
 void repeatedCall() {
